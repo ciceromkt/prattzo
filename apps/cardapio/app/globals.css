@@ -31,6 +31,33 @@ button { font: inherit; color: inherit; }
 .palco { position: relative; height: 100dvh; overflow: hidden; }
 .rolagem { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
+/**
+ * Tela larga: o cardápio vira uma coluna de celular, centralizada.
+ *
+ * Isto não é enfeite nem moldura de demonstração. O cardápio é feito de vídeo
+ * vertical e de toque: esticado em 1440px, cada capa de categoria vira um
+ * retângulo de 700px e a página parece quebrada. E tela grande acontece de
+ * verdade — o dono conferindo no computador, o link aberto numa reunião, o
+ * prospect que recebe o endereço por e-mail. Quem chega pelo QR da mesa não vê
+ * diferença nenhuma: no celular a coluna ocupa a tela inteira.
+ */
+@media (min-width: 620px) {
+  body {
+    display: grid;
+    place-items: center;
+    /* Clarão quente atrás da coluna, para a moldura não virar uma barra preta. */
+    background:
+      radial-gradient(120% 90% at 50% 0%, #1a1512 0%, var(--breu) 60%) fixed;
+  }
+  .palco {
+    width: 420px;
+    max-width: 100%;
+    height: min(900px, 100dvh);
+    border-radius: 22px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .55), 0 0 0 1px rgba(246, 241, 234, .07);
+  }
+}
+
 /* ---------------------------------------------------------------- capa */
 .hero { position: relative; height: 62dvh; min-height: 320px; display: flex; align-items: flex-end; overflow: hidden; }
 .hero__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
