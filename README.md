@@ -5,6 +5,24 @@ o que quer e chega no garçom com a própria lista pronta.
 
 > **Nome provisório.** Está num único arquivo (`packages/core/src/brand.ts`).
 
+## Produto, não ferramenta de um restaurante
+
+O Prattzo é vendido para restaurantes. **O Gula Rooftop é o cliente piloto** —
+o primeiro a usar, e o cardápio por onde o produto foi desenhado e testado.
+Não é o dono do produto.
+
+Isso tem consequência prática em três lugares, e vale conferir a cada mudança:
+
+- **Dado é do cliente, código é do produto.** "Gula" pode aparecer em linha de
+  banco, em seed e no `docs/PILOTO.md`. Não pode aparecer em nome de projeto,
+  de variável, de rota, em texto de tela nem em exemplo que outro restaurante
+  vá ver — como o campo de cadastro, que não sugere o nome do piloto.
+- **Nada é único.** Cada restaurante é uma linha em `restaurants`, com `slug`
+  próprio, e o cardápio dele vive em `/r/<slug>`. Não há "o restaurante".
+- **Um não enxerga o outro.** O isolamento é do banco, por RLS, não da tela: as
+  políticas públicas valem só para `anon`, e cada dono só alcança as linhas do
+  restaurante dele. Ver `supabase/migrations/*_rls.sql`.
+
 ## O que é
 
 Dois aplicativos sobre a mesma base:

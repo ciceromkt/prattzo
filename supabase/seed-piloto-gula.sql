@@ -1,4 +1,8 @@
--- Cardápio do Gula Rooftop para o Supabase.
+-- Cardápio do Gula Rooftop — DADO DO CLIENTE PILOTO, não do produto.
+--
+-- Cada restaurante que entrar no Prattzo ganha as próprias linhas, pelo painel.
+-- Este arquivo existe só para montar o piloto de novo sem recadastrar 26 pratos
+-- à mão. Não é exemplo a copiar para um cliente novo.
 --
 -- Rode DEPOIS do arquivo de estrutura e DEPOIS de criar o seu usuário.
 -- Troque as duas linhas abaixo e mande o arquivo inteiro de uma vez.

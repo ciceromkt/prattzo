@@ -1,7 +1,9 @@
 /**
- * Preço. O cardápio do Gula tem itens de valor único ("R$ 59,00") e itens com
- * faixa ("R$ 126,80 até R$ 164,90", porque muda com o tamanho). Os dois casos
- * moram aqui, e item sem preço é dito em voz alta em vez de virar "R$ 0,00".
+ * Preço. Um cardápio tem itens de valor único ("R$ 59,00") e itens com faixa
+ * ("R$ 126,80 até R$ 164,90", porque muda com o tamanho ou com o ponto da
+ * carne). Os dois casos moram aqui, e item sem preço é dito em voz alta em vez
+ * de virar "R$ 0,00" — o cliente que vê zero acha que é de graça ou que o app
+ * está quebrado, e as duas leituras custam caro no salão.
  */
 
 export const SEM_PRECO = "Preço a confirmar";

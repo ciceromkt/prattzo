@@ -26,7 +26,7 @@ export function FormularioOnboarding() {
           maxLength={120}
           value={nome}
           onChange={(e) => setNome(e.target.value)}
-          placeholder="Gula Rooftop"
+          placeholder="Nome do seu restaurante"
         />
         <span className="campo__dica">
           {slug ? (

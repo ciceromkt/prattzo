@@ -13,8 +13,8 @@ métrica, trava de edição simultânea e o bucket `midia` com as três polític
 
 | Projeto | Root Directory | Vira |
 |---|---|---|
-| `gula-cardapio` | `apps/cardapio` | o endereço que o cliente abre |
-| `gula-painel` | `apps/painel` | o endereço onde você edita |
+| `prattzo` | `apps/cardapio` | o endereço que o cliente abre |
+| `prattzo-painel` | `apps/painel` | o endereço onde você edita |
 
 A *Vercel Authentication* foi **desligada** nos dois. Ela vem ligada por padrão
 e exigiria login da Vercel para abrir a página — num cardápio isso seria fatal:
