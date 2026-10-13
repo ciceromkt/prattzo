@@ -28,6 +28,12 @@ html, body {
 
 button { font: inherit; color: inherit; }
 
+/* O app do cliente não carrega os tokens do painel: o que precisa, declara. */
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
 .palco { position: relative; height: 100dvh; overflow: hidden; }
 .rolagem { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
@@ -64,9 +70,20 @@ button { font: inherit; color: inherit; }
 .hero { position: relative; height: 62dvh; min-height: 320px; display: flex; align-items: flex-end; overflow: hidden; }
 .hero__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .hero__veu { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,11,9,.55) 0%, rgba(14,11,9,.1) 38%, var(--breu) 97%); }
-.hero__texto { position: relative; padding: 0 20px 26px; width: 100%; }
-.hero__logo { max-width: 60%; max-height: 92px; object-fit: contain; }
-.hero__nome { font-family: var(--display); font-size: 2.6rem; font-weight: 600; letter-spacing: -.03em; margin: 0; }
+/**
+ * O bloco da capa é centralizado.
+ *
+ * Alinhado à esquerda, o logo (que é `img`, portanto inline) e o selo de
+ * horário (inline-flex) caíam na MESMA linha, lado a lado — era o "logo
+ * jogado": a marca empurrada para o canto com a hora grudada nela. Empilhado e
+ * centralizado, o logo vira a âncora da tela e o horário um rótulo sob ele.
+ */
+.hero__texto { position: relative; padding: 0 20px 26px; width: 100%;
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+.hero__logo { display: block; max-width: 62%; max-height: 104px; object-fit: contain;
+  filter: drop-shadow(0 2px 14px rgba(0,0,0,.55)); }
+.hero__nome { font-family: var(--display); font-size: 2.4rem; font-weight: 600; letter-spacing: -.03em;
+  margin: 0; text-shadow: 0 2px 18px rgba(0,0,0,.6); }
 .hero__horario { margin: 9px 0 0; font-size: .86rem; font-weight: 600; color: var(--neve-media); }
 
 .topo-flutua { position: absolute; top: 0; left: 0; right: 0; z-index: 3; display: flex; justify-content: space-between; gap: 10px; padding: 16px; }
@@ -245,10 +262,26 @@ button { font: inherit; color: inherit; }
 .sugestao__add:active { transform: scale(.97); }
 
 /* Estado do salão no topo: "Aberto até 2h" / "Abre hoje às 18h". */
-.hero__horario { display: inline-flex; align-items: center; gap: 7px; margin: 9px 0 0;
-  font-size: .86rem; font-weight: 700; color: var(--neve); }
+/* Horário: uma pílula só, calculada. Antes havia duas linhas dizendo a mesma
+   coisa — esta e a frase livre herdada do cadastro antigo. */
+.hero__horario { display: inline-flex; align-items: center; gap: 8px; margin: 0;
+  padding: 7px 15px; border: 1px solid var(--fio-forte); border-radius: 999px;
+  background: rgba(0,0,0,.45); backdrop-filter: blur(10px);
+  font-size: .85rem; font-weight: 700; color: var(--neve); }
 .hero__ponto { width: 7px; height: 7px; border-radius: 50%; background: #4ade80;
-  box-shadow: 0 0 0 3px rgba(74, 222, 128, .2); }
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, .22); }
 .hero__horario--fechado { color: var(--neve-media); }
 .hero__horario--fechado .hero__ponto { background: var(--neve-fraca); box-shadow: none; }
-.hero__frase { margin: 5px 0 0; font-size: .84rem; font-weight: 500; color: var(--neve-media); }
+.hero__frase { margin: 0; font-size: .84rem; font-weight: 500; color: var(--neve-media); }
+
+/* ------------------------------------------------- atalhos de categoria */
+.atalhos { display: flex; gap: 8px; overflow-x: auto; padding: 14px 16px 4px;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.atalhos::-webkit-scrollbar { display: none; }
+.atalhos__item { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 15px; border: 1px solid var(--fio-forte); border-radius: 999px;
+  background: rgba(255,255,255,.04); color: var(--neve);
+  font-size: .88rem; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.atalhos__item:active { transform: scale(.97); }
+.atalhos__n { font-size: .74rem; font-weight: 700; color: var(--neve-fraca);
+  font-variant-numeric: tabular-nums; }

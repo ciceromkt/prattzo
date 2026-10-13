@@ -358,7 +358,12 @@ function Capa({
         </div>
         <div className="hero__texto">
           {restaurant.logo_url ? (
-            <img className="hero__logo" src={restaurant.logo_url} alt={restaurant.nome} />
+            <>
+              <img className="hero__logo" src={restaurant.logo_url} alt={restaurant.nome} />
+              {/* O nome segue no documento para busca e leitor de tela: a marca
+                  está na imagem, mas o texto é o que o Google e o cego leem. */}
+              <h1 className="visually-hidden">{restaurant.nome}</h1>
+            </>
           ) : (
             <h1 className="hero__nome">{restaurant.nome}</h1>
           )}
@@ -366,6 +371,19 @@ function Capa({
           {restaurant.horario_texto ? <p className="hero__frase">{restaurant.horario_texto}</p> : null}
         </div>
       </header>
+
+      {/* Atalho para o vídeo sem rolar. A grade abaixo faz a mesma coisa, mas
+          exige rolar até a categoria; quem chegou pelo QR com fome não rola. */}
+      {grupos.length > 1 ? (
+        <nav className="atalhos" aria-label="Categorias">
+          {grupos.map((g) => (
+            <button type="button" className="atalhos__item" key={g.categoria.id} onClick={() => onCategoria(g)}>
+              {g.categoria.nome}
+              <span className="atalhos__n">{g.pratos.length}</span>
+            </button>
+          ))}
+        </nav>
+      ) : null}
 
       <div className="grade">
         {grupos.map((g) => {
