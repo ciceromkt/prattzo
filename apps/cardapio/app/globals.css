@@ -52,7 +52,9 @@ button { font: inherit; color: inherit; }
   .palco {
     width: 420px;
     max-width: 100%;
-    height: min(900px, 100dvh);
+    /* A folga garante que o arredondamento e a sombra apareçam: colada na
+       borda, a coluna lê como página cortada em vez de aparelho. */
+    height: min(900px, calc(100dvh - 40px));
     border-radius: 22px;
     box-shadow: 0 24px 70px rgba(0, 0, 0, .55), 0 0 0 1px rgba(246, 241, 234, .07);
   }
