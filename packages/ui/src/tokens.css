@@ -39,6 +39,10 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema="claro"]) {
+    /* Diz ao navegador que a página é escura, para ele desenhar o que o CSS
+       não alcança — seta do select, barra de rolagem, seletor de data — na cor
+       certa. Sem isto, um select fica com fundo claro e texto claro. */
+    color-scheme: dark;
     --cor-tinta: #f5f1ec;
     --cor-tinta-media: #c2bab3;
     --cor-tinta-fraca: #948b84;

@@ -2,6 +2,7 @@ import { getRestaurantDoUsuario } from "@prattzo/db";
 import { requireRestaurant } from "@/lib/supabase";
 import { Casca } from "@/components/Casca";
 import { FormularioRestaurante } from "@/components/FormularioRestaurante";
+import { EditorHorarios } from "@/components/EditorHorarios";
 import { alternarPublicado } from "@/lib/actions";
 
 export const metadata = { title: "Configurações" };
@@ -13,10 +14,10 @@ export default async function Configuracoes() {
   if (!r) return null;
 
   return (
-    <Casca titulo="Configurações" descricao="Identidade do cardápio e publicação.">
+    <Casca titulo="Configurações" descricao="Identidade da casa, horários e publicação.">
       <section className="bloco">
         <h3>Publicar</h3>
-        <p className="dica">
+        <p className="contagem">
           Enquanto está em rascunho, ninguém vê o cardápio — nem com o link. Publique só quando os
           preços estiverem conferidos.
         </p>
@@ -29,6 +30,8 @@ export default async function Configuracoes() {
       </section>
 
       <FormularioRestaurante restaurante={r} />
+
+      <EditorHorarios horarios={r.horarios} />
     </Casca>
   );
 }

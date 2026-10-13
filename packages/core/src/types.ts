@@ -55,7 +55,10 @@ export interface Restaurant {
   descricao: string;
   logo_url: string | null;
   video_capa_url: string | null;
+  /** Frase livre no topo do cardápio. Fica abaixo do horário calculado. */
   horario_texto: string;
+  /** Expedientes por dia da semana. Validar com `lerExpedientes` antes de usar. */
+  horarios: unknown;
   /** Fuso IANA do salão, ex.: "America/Sao_Paulo". */
   fuso: string;
   link_google: string | null;

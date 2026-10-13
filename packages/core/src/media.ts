@@ -61,8 +61,20 @@ export function validatePhoto(input: MediaValidationInput): MediaValidation {
   return { ok: errors.length === 0, errors, warnings };
 }
 
-/** Caminho determinístico dentro do bucket/storage. */
+/**
+ * Caminho dentro do bucket.
+ *
+ * A primeira pasta é SEMPRE o id do restaurante: é o que a política do Storage
+ * confere para decidir quem pode escrever. Mudar isso aqui abre o bucket de um
+ * cliente para outro.
+ */
 export function mediaPath(restaurantId: string, dishId: string, kind: "foto" | "video", ext: string): string {
   const safeExt = ext.replace(/[^a-z0-9]/gi, "").toLowerCase() || "bin";
   return `${restaurantId}/${dishId}/${kind}-${Date.now()}.${safeExt}`;
+}
+
+/** Mídia do restaurante, não de um prato: vídeo de capa e logo. */
+export function brandingPath(restaurantId: string, kind: "capa" | "logo", ext: string): string {
+  const safeExt = ext.replace(/[^a-z0-9]/gi, "").toLowerCase() || "bin";
+  return `${restaurantId}/casa/${kind}-${Date.now()}.${safeExt}`;
 }

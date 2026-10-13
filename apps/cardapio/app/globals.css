@@ -243,3 +243,12 @@ button { font: inherit; color: inherit; }
 .sugestao__preco { font-size: .92rem; font-weight: 700; min-width: 0; }
 .sugestao__add { flex: 0 0 auto; padding: 9px 14px; border: 1px solid var(--ambar); border-radius: 999px; background: none; color: var(--ambar); font-size: .85rem; font-weight: 800; white-space: nowrap; cursor: pointer; }
 .sugestao__add:active { transform: scale(.97); }
+
+/* Estado do salão no topo: "Aberto até 2h" / "Abre hoje às 18h". */
+.hero__horario { display: inline-flex; align-items: center; gap: 7px; margin: 9px 0 0;
+  font-size: .86rem; font-weight: 700; color: var(--neve); }
+.hero__ponto { width: 7px; height: 7px; border-radius: 50%; background: #4ade80;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, .2); }
+.hero__horario--fechado { color: var(--neve-media); }
+.hero__horario--fechado .hero__ponto { background: var(--neve-fraca); box-shadow: none; }
+.hero__frase { margin: 5px 0 0; font-size: .84rem; font-weight: 500; color: var(--neve-media); }

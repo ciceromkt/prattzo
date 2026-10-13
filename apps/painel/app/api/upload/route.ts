@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { mediaPath } from "@prattzo/core";
+import { brandingPath, mediaPath } from "@prattzo/core";
 import { requireRestaurant } from "@/lib/supabase";
 import { reportError } from "@/lib/log";
 
@@ -19,26 +19,49 @@ const BUCKET = "midia";
 
 /**
  * Devolve uma URL assinada para o navegador enviar direto ao Storage.
- * O arquivo nunca passa por aqui. A política do bucket só aceita escrita
- * dentro da pasta do próprio restaurante.
+ * O arquivo nunca passa por aqui — o painel só autoriza.
+ *
+ * Dois destinos: a mídia de um prato (`dishId`) e a mídia da casa (`alvo`),
+ * que é o vídeo de ambiente da capa e o logo. Nos dois casos o caminho começa
+ * pelo id do restaurante, que é o que a política do Storage confere.
  */
 export async function POST(req: Request) {
   try {
     const { client, restaurant } = await requireRestaurant();
-    const { dishId, tipo, contentType } = (await req.json()) as {
-      dishId?: string; tipo?: "foto" | "video"; contentType?: string;
+    const { dishId, tipo, contentType, alvo } = (await req.json()) as {
+      dishId?: string;
+      tipo?: "foto" | "video";
+      contentType?: string;
+      alvo?: "capa" | "logo";
     };
 
-    if (!dishId || !tipo || !contentType || !EXT[contentType]) {
-      return NextResponse.json({ erro: "Pedido inválido." }, { status: 400 });
+    if (!contentType || !EXT[contentType]) {
+      return NextResponse.json({ erro: "Formato não aceito." }, { status: 400 });
     }
 
-    // Confere que o prato é mesmo deste restaurante antes de liberar escrita.
-    const { data: prato } = await client
-      .from("dishes").select("id").eq("id", dishId).eq("restaurant_id", restaurant.id).maybeSingle();
-    if (!prato) return NextResponse.json({ erro: "Item não encontrado." }, { status: 404 });
+    let path: string;
 
-    const path = mediaPath(restaurant.id, dishId, tipo, EXT[contentType]!);
+    if (alvo === "capa" || alvo === "logo") {
+      // Logo é imagem; capa é vídeo. Trocar um pelo outro quebraria a tela.
+      const ehVideo = contentType.startsWith("video/");
+      if (alvo === "capa" && !ehVideo) {
+        return NextResponse.json({ erro: "A capa é um vídeo." }, { status: 400 });
+      }
+      if (alvo === "logo" && ehVideo) {
+        return NextResponse.json({ erro: "O logo é uma imagem." }, { status: 400 });
+      }
+      path = brandingPath(restaurant.id, alvo, EXT[contentType]!);
+    } else {
+      if (!dishId || !tipo) {
+        return NextResponse.json({ erro: "Pedido inválido." }, { status: 400 });
+      }
+      // Confere que o prato é mesmo deste restaurante antes de liberar escrita.
+      const { data: prato } = await client
+        .from("dishes").select("id").eq("id", dishId).eq("restaurant_id", restaurant.id).maybeSingle();
+      if (!prato) return NextResponse.json({ erro: "Item não encontrado." }, { status: 404 });
+      path = mediaPath(restaurant.id, dishId, tipo, EXT[contentType]!);
+    }
+
     const { data, error } = await client.storage.from(BUCKET).createSignedUploadUrl(path);
     if (error || !data) {
       reportError("falha_url_upload", error);

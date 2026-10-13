@@ -8,15 +8,18 @@ export function BotaoEnviar({
   carregando = "Salvando…",
   className = "botao",
   style,
+  disabled = false,
 }: {
   children: React.ReactNode;
   carregando?: string;
   className?: string;
   style?: React.CSSProperties;
+  /** Trava o envio quando o próprio formulário já sabe que o dado está inválido. */
+  disabled?: boolean;
 }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" className={className} disabled={pending} style={style}>
+    <button type="submit" className={className} disabled={pending || disabled} style={style}>
       {pending ? carregando : children}
     </button>
   );

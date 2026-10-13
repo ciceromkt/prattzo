@@ -357,9 +357,56 @@
 }
 
 /* ------------------------------------------------------------------ campos */
-.campo {
+/**
+ * `.campo` é a classe dos campos do editor. Antes só tinha `display` e margem:
+ * sem fundo, o navegador desenhava a caixa branca padrão; com `color: inherit`
+ * dos tokens, o texto herdava o quase-branco do modo escuro. Resultado: branco
+ * no branco, o conteúdo do campo invisível em todo o painel.
+ *
+ * Os dois nomes (`.campo` e `.campo__entrada`) nasceram de reescritas
+ * diferentes. Ficam com a mesma aparência de propósito, para não divergirem de
+ * novo, e `color-scheme` abaixo faz o navegador desenhar seletor de data,
+ * barra de rolagem e seta de select na cor certa.
+ */
+label.campo,
+.campo-grupo {
   display: block;
   margin-bottom: 18px;
+}
+
+input.campo,
+select.campo,
+textarea.campo,
+.campo__entrada,
+.campo__area,
+.campo__select {
+  display: block;
+  width: 100%;
+  min-height: var(--alvo-toque);
+  margin-bottom: 4px;
+  padding: 11px 13px;
+  border: 1.5px solid var(--cor-borda-forte);
+  border-radius: var(--raio-p);
+  background: var(--cor-papel-alto);
+  color: var(--cor-tinta);
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+input.campo::placeholder,
+textarea.campo::placeholder,
+.campo__entrada::placeholder,
+.campo__area::placeholder {
+  color: var(--cor-tinta-fraca);
+  opacity: 1;
+}
+
+input.campo:focus-visible,
+select.campo:focus-visible,
+textarea.campo:focus-visible {
+  outline: 2px solid var(--cor-marca);
+  outline-offset: 1px;
+  border-color: var(--cor-marca);
 }
 
 .campo__rotulo {
@@ -719,7 +766,8 @@
 .campo-rotulo { display: block; font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--cor-tinta-fraca); margin-bottom: 5px; }
 .contagem { margin: 5px 0 11px; font-size: .72rem; color: var(--cor-tinta-fraca); }
 .contagem--curta { color: #8a5e14; font-weight: 600; }
-textarea.campo { min-height: 78px; resize: vertical; line-height: 1.5; }
+/* Descrição é o texto que faz pedir: precisa caber inteira sem rolar. */
+textarea.campo { min-height: 132px; resize: vertical; line-height: 1.55; }
 
 .bt { min-height: 38px; padding: 8px 14px; border: 1px solid var(--cor-borda); border-radius: 9px; background: none; font: inherit; font-size: .84rem; font-weight: 600; cursor: pointer; }
 .bt:hover:not(:disabled) { border-color: var(--cor-acento); }
@@ -774,3 +822,36 @@ textarea.campo { min-height: 78px; resize: vertical; line-height: 1.5; }
   .rail { position: static; grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding-bottom: 4px; }
   .rail__titulo { display: none; }
 }
+
+/* ------------------------------------------------- dias e horários */
+.horarios { display: grid; gap: 6px; margin: 14px 0 4px; }
+.horarios__linha { display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 9px 12px; border: 1px solid var(--cor-borda); border-radius: 10px;
+  background: var(--cor-papel-alto); }
+.horarios__linha--off { opacity: .62; }
+.horarios__dia { display: inline-flex; align-items: center; gap: 9px; min-width: 132px;
+  font-size: .92rem; font-weight: 620; cursor: pointer; }
+.horarios__dia input { width: 18px; height: 18px; accent-color: var(--cor-marca); }
+.horarios__faixa { display: inline-flex; align-items: center; gap: 8px; }
+.horarios__ate { font-size: .85rem; color: var(--cor-tinta-fraca); }
+.horarios__fechado { font-size: .85rem; color: var(--cor-tinta-fraca); }
+/* Campo de hora não precisa de largura total: dois cabem lado a lado no celular. */
+input.campo--hora { width: auto; min-width: 7.5em; margin-bottom: 0; }
+.horarios__linha .bt { margin-left: auto; }
+
+/* --------------------------------------------- prévia da mídia da casa */
+.previa-casa { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin: 10px 0; }
+.previa-casa__midia { width: 108px; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 10px;
+  background: var(--cor-papel); border: 1px solid var(--cor-borda); }
+.previa-casa__midia--logo { aspect-ratio: 1; object-fit: contain; padding: 8px; }
+.previa-casa__acoes { display: grid; gap: 8px; }
+.previa-casa__acoes .contagem { margin: 0; }
+
+/* O campo de arquivo precisa parecer clicável, não um retângulo vazio. */
+input.campo[type="file"] { padding: 9px 11px; cursor: pointer; }
+input.campo[type="file"]::file-selector-button {
+  margin-right: 12px; padding: 8px 14px; border: 1px solid var(--cor-borda-forte);
+  border-radius: 999px; background: var(--cor-papel); color: var(--cor-tinta);
+  font: inherit; font-size: .85rem; font-weight: 650; cursor: pointer;
+}
+input.campo[type="file"]::file-selector-button:hover { border-color: var(--cor-marca); }

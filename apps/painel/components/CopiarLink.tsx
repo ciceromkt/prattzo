@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 
-export function CopiarLink({ url, svg, nome }: { url: string; svg: string; nome: string }) {
+/**
+ * Copiar o endereço do cardápio. O QR é opcional: na página de Marketing só
+ * interessa o link, e carregar os botões de baixar e imprimir ali seria ruído.
+ */
+export function CopiarLink({ url, svg, nome }: { url: string; svg?: string; nome?: string }) {
   const [copiado, setCopiado] = useState(false);
 
   async function copiar() {
@@ -16,11 +20,12 @@ export function CopiarLink({ url, svg, nome }: { url: string; svg: string; nome:
   }
 
   function baixarSvg() {
+    if (!svg) return;
     const blob = new Blob([svg], { type: "image/svg+xml" });
     const href = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = href;
-    a.download = `qrcode-${nome}.svg`;
+    a.download = `qrcode-${nome ?? "cardapio"}.svg`;
     a.click();
     URL.revokeObjectURL(href);
   }
@@ -32,12 +37,16 @@ export function CopiarLink({ url, svg, nome }: { url: string; svg: string; nome:
         <button type="button" className="botao botao--neutro" onClick={copiar}>
           {copiado ? "✓ Copiado" : "Copiar link"}
         </button>
-        <button type="button" className="botao botao--neutro" onClick={baixarSvg}>
-          Baixar QR Code (SVG)
-        </button>
-        <button type="button" className="botao botao--neutro" onClick={() => window.print()}>
-          Imprimir
-        </button>
+        {svg ? (
+          <>
+            <button type="button" className="botao botao--neutro" onClick={baixarSvg}>
+              Baixar QR Code (SVG)
+            </button>
+            <button type="button" className="botao botao--neutro" onClick={() => window.print()}>
+              Imprimir
+            </button>
+          </>
+        ) : null}
       </div>
     </>
   );

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
-  esgotadoAte, FUSO_PADRAO, parsePriceToCents, proximaOrdem, slugify,
+  esgotadoAte, FUSO_PADRAO, lerExpedientes, parsePriceToCents, proximaOrdem, slugify,
 } from "@prattzo/core";
 import { reordenar as reordenarLocal } from "@prattzo/core";
 import { requireRestaurant, requireUser } from "./supabase";
@@ -91,7 +91,6 @@ export async function salvarRestaurante(_e: ActionState, fd: FormData): Promise<
       descricao: texto(fd, "descricao"),
       horario_texto: texto(fd, "horario_texto"),
       fuso: texto(fd, "fuso") || FUSO_PADRAO,
-      link_google: texto(fd, "link_google") || null,
       logo_url: texto(fd, "logo_url") || null,
       video_capa_url: texto(fd, "video_capa_url") || null,
     })
@@ -100,7 +99,53 @@ export async function salvarRestaurante(_e: ActionState, fd: FormData): Promise<
     reportError("falha_salvar_restaurante", error);
     return { erro: "Não deu para salvar." };
   }
-  revalidatePath("/configuracoes");
+  // `atualiza` em vez de só revalidar aqui: nome, horário e vídeo de capa
+  // aparecem no cardápio do cliente, que é outro app, com outro cache.
+  await atualiza(restaurant.slug);
+  return { ok: "Salvo." };
+}
+
+/** Dias e horários. Chega como JSON pronto do formulário e é validado aqui. */
+export async function salvarHorarios(_e: ActionState, fd: FormData): Promise<ActionState> {
+  const { client, restaurant } = await requireRestaurant();
+
+  let bruto: unknown = [];
+  try {
+    bruto = JSON.parse(texto(fd, "horarios") || "[]");
+  } catch {
+    return { erro: "Horários em formato inesperado." };
+  }
+
+  // Nunca grava o que veio do navegador sem passar pelo mesmo validador que o
+  // cardápio usa para ler: assim o banco não guarda o que a tela não entende.
+  const limpos = lerExpedientes(bruto);
+
+  const { error } = await client
+    .from("restaurants").update({ horarios: limpos }).eq("id", restaurant.id);
+  if (error) {
+    reportError("falha_salvar_horarios", error);
+    return { erro: "Não deu para salvar os horários." };
+  }
+  await atualiza(restaurant.slug);
+  return { ok: limpos.length === 0 ? "Salvo. Nenhum dia marcado como aberto." : "Horários salvos." };
+}
+
+/** Marketing: o que serve para trazer e trazer de volta o cliente. */
+export async function salvarMarketing(_e: ActionState, fd: FormData): Promise<ActionState> {
+  const { client, restaurant } = await requireRestaurant();
+
+  const link = texto(fd, "link_google");
+  if (link && !/^https?:\/\//i.test(link)) {
+    return { erro: "O link do Google precisa começar com https://" };
+  }
+
+  const { error } = await client
+    .from("restaurants").update({ link_google: link || null }).eq("id", restaurant.id);
+  if (error) {
+    reportError("falha_salvar_marketing", error);
+    return { erro: "Não deu para salvar." };
+  }
+  await atualiza(restaurant.slug);
   return { ok: "Salvo." };
 }
 

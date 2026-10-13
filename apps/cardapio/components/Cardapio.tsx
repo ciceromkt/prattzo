@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Dish, MenuGroup, PublicMenu } from "@prattzo/core";
-import { capaDaCategoria, filaDeStories, orderTotal, sugestoesParaPedido, videoDoPrato } from "@prattzo/core";
+import { capaDaCategoria, estadoAgora, filaDeStories, lerExpedientes, orderTotal, sugestoesParaPedido, videoDoPrato } from "@prattzo/core";
+import type { EstadoHorario } from "@prattzo/core";
 import { Stories } from "./Stories";
 import { ListaCorrida } from "./ListaCorrida";
 import { Pedido } from "./Pedido";
@@ -361,7 +362,8 @@ function Capa({
           ) : (
             <h1 className="hero__nome">{restaurant.nome}</h1>
           )}
-          {restaurant.horario_texto ? <p className="hero__horario">{restaurant.horario_texto}</p> : null}
+          <HorarioAgora restaurant={restaurant} />
+          {restaurant.horario_texto ? <p className="hero__frase">{restaurant.horario_texto}</p> : null}
         </div>
       </header>
 
@@ -397,3 +399,31 @@ function Capa({
   );
 }
 
+
+/**
+ * "Aberto até 2h" no topo, calculado no fuso do salão.
+ *
+ * Renderiza só depois de montar: a página é cacheada, então o HTML do servidor
+ * carrega o estado da hora em que ele gerou — e serviria "Aberto" às 4 da manhã.
+ * Montado no navegador, a hora é a de quem está olhando.
+ */
+function HorarioAgora({ restaurant }: { restaurant: PublicMenu["restaurant"] }) {
+  const [estado, setEstado] = useState<EstadoHorario | null>(null);
+
+  useEffect(() => {
+    const expedientes = lerExpedientes(restaurant.horarios);
+    const calcular = () => setEstado(estadoAgora(expedientes, restaurant.fuso));
+    calcular();
+    // A virada acontece enquanto o cliente está com a tela aberta.
+    const t = setInterval(calcular, 60_000);
+    return () => clearInterval(t);
+  }, [restaurant.horarios, restaurant.fuso]);
+
+  if (!estado || !estado.texto) return null;
+  return (
+    <p className={`hero__horario${estado.aberto ? "" : " hero__horario--fechado"}`}>
+      <span className="hero__ponto" aria-hidden="true" />
+      {estado.texto}
+    </p>
+  );
+}
