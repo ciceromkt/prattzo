@@ -3,7 +3,7 @@
  * (Nome provisório até a decisão final de nome e domínio.)
  */
 export const BRAND = {
-  name: "Pede Esse",
+  name: "Prattzo",
   tagline: "O cardápio que dá vontade",
-  supportEmail: "contato@pedeesse.com.br",
+  supportEmail: "contato@prattzo.com.br",
 } as const;

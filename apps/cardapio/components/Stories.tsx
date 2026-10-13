@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Dish, MenuGroup } from "@pede-esse/core";
-import { capaDoPrato, estaEsgotado, priceLabel, videoDoPrato } from "@pede-esse/core";
-import { DUR_SEM_VIDEO } from "@pede-esse/ui";
+import type { Dish, MenuGroup } from "@prattzo/core";
+import { capaDoPrato, estaEsgotado, priceLabel, videoDoPrato } from "@prattzo/core";
+import { DUR_SEM_VIDEO } from "@prattzo/ui";
 import { Regua } from "./Regua";
 import { track } from "@/lib/track";
 

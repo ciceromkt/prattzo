@@ -1,4 +1,4 @@
-import { BRAND } from "@pede-esse/core";
+import { BRAND } from "@prattzo/core";
 
 export default function Home() {
   return (

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { mediaPath } from "@pede-esse/core";
+import { mediaPath } from "@prattzo/core";
 import { requireRestaurant } from "@/lib/supabase";
 import { reportError } from "@/lib/log";
 

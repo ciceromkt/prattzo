@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { BRAND } from "@pede-esse/core";
-import { getRestaurantDoUsuario } from "@pede-esse/db";
+import { BRAND } from "@prattzo/core";
+import { getRestaurantDoUsuario } from "@prattzo/db";
 import { requireUser } from "@/lib/supabase";
 import { FormularioOnboarding } from "@/components/FormularioOnboarding";
 

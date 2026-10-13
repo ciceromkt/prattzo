@@ -1,4 +1,4 @@
-# Pede Esse
+# Prattzo
 
 Cardápio digital com vídeo vertical por prato. O cliente assiste, vai separando
 o que quer e chega no garçom com a própria lista pronta.
@@ -27,7 +27,7 @@ Dois aplicativos sobre a mesma base:
 ## Estrutura
 
 ```
-pede-esse/
+prattzo/
 ├── apps/
 │   ├── cardapio/      Next.js — app do cliente (porta 3000)
 │   └── painel/        Next.js — painel do dono (porta 3001)

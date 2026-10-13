@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   esgotadoAte, FUSO_PADRAO, parsePriceToCents, proximaOrdem, slugify,
-} from "@pede-esse/core";
-import { reordenar as reordenarLocal } from "@pede-esse/core";
+} from "@prattzo/core";
+import { reordenar as reordenarLocal } from "@prattzo/core";
 import { requireRestaurant, requireUser } from "./supabase";
 import { reportError } from "./log";
 

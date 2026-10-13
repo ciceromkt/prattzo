@@ -1,10 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { MediaItem } from "@pede-esse/core";
+import type { MediaItem } from "@prattzo/core";
 import {
   MAX_PHOTO_BYTES, MAX_VIDEO_BYTES, MAX_VIDEO_SECONDS, validatePhoto, validateVideo,
-} from "@pede-esse/core";
+} from "@prattzo/core";
 import { excluirMidia, moverMidia, registrarMidia } from "@/lib/actions";
 
 /**

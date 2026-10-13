@@ -1,5 +1,5 @@
 {
-  "name": "@pede-esse/painel",
+  "name": "@prattzo/painel",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,9 +10,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@pede-esse/core": "*",
-    "@pede-esse/db": "*",
-    "@pede-esse/ui": "*",
+    "@prattzo/core": "*",
+    "@prattzo/db": "*",
+    "@prattzo/ui": "*",
     "next": "14.2.33",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",

@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ["@pede-esse/core", "@pede-esse/db", "@pede-esse/ui"],
+  transpilePackages: ["@prattzo/core", "@prattzo/db", "@prattzo/ui"],
   async headers() {
     return [
       {

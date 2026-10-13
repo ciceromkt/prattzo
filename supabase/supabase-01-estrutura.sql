@@ -1,4 +1,4 @@
--- Pede Esse — estrutura completa do banco.
+-- Prattzo — estrutura completa do banco.
 --
 -- Cole ESTE ARQUIVO INTEIRO no SQL Editor do Supabase e rode uma vez.
 -- São as 5 migrações do projeto, na ordem:

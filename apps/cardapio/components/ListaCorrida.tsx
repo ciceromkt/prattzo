@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { Dish, MenuGroup } from "@pede-esse/core";
-import { capaDoPrato, estaEsgotado, priceLabel } from "@pede-esse/core";
+import type { Dish, MenuGroup } from "@prattzo/core";
+import { capaDoPrato, estaEsgotado, priceLabel } from "@prattzo/core";
 import { Regua } from "./Regua";
 
 /**

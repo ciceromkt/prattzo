@@ -1,6 +1,7 @@
-# Subir o Pede Esse no Supabase
+# Subir o Prattzo no Supabase (do zero)
 
-Leva uns 10 minutos. Você não precisa me passar nenhuma senha nem chave secreta:
+O projeto do Gula **já está no ar** — isto aqui serve para montar um banco novo,
+para outro cliente ou para recomeçar do zero. Leva uns 10 minutos. Você não precisa me passar nenhuma senha nem chave secreta:
 tudo aqui é copiar e colar no painel do Supabase.
 
 ---

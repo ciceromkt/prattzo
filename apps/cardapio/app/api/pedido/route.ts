@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient, createPublicClient, getPublicMenu, registrarPedido } from "@pede-esse/db";
+import { createAdminClient, createPublicClient, getPublicMenu, registrarPedido } from "@prattzo/db";
 import { rateLimit } from "@/lib/ratelimit";
 import { log } from "@/lib/log";
 

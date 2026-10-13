@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { BRAND } from "@pede-esse/core";
-import "@pede-esse/ui/tokens.css";
+import { BRAND } from "@prattzo/core";
+import "@prattzo/ui/tokens.css";
 import "./globals.css";
 
 export const metadata: Metadata = {

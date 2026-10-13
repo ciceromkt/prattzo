@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createPublicClient } from "@pede-esse/db";
+import { createPublicClient } from "@prattzo/db";
 import { log } from "@/lib/log";
 
 export const dynamic = "force-dynamic";

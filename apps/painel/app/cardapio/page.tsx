@@ -1,5 +1,5 @@
-import { montarGrupos, capaDaCategoria, diagnosticar, opcoesDeCapa } from "@pede-esse/core";
-import { getMenuDoDono } from "@pede-esse/db";
+import { montarGrupos, capaDaCategoria, diagnosticar, opcoesDeCapa } from "@prattzo/core";
+import { getMenuDoDono } from "@prattzo/db";
 import { requireRestaurant } from "@/lib/supabase";
 import { Casca } from "@/components/Casca";
 import { PainelCardapio } from "@/components/PainelCardapio";

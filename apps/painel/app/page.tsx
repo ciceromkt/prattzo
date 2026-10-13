@@ -1,4 +1,4 @@
-import { getAtencao, getResumo } from "@pede-esse/db";
+import { getAtencao, getResumo } from "@prattzo/db";
 import { requireRestaurant } from "@/lib/supabase";
 import { Casca } from "@/components/Casca";
 

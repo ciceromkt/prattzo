@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@pede-esse/db";
+import { createAdminClient } from "@prattzo/db";
 import { rateLimit } from "@/lib/ratelimit";
 import { log, reportError } from "@/lib/log";
 

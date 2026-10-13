@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { MenuGroup } from "@pede-esse/core";
+import type { MenuGroup } from "@prattzo/core";
 
 /** Régua de categorias: troca de categoria sem sair dos stories. */
 export function Regua({

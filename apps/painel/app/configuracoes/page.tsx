@@ -1,4 +1,4 @@
-import { getRestaurantDoUsuario } from "@pede-esse/db";
+import { getRestaurantDoUsuario } from "@prattzo/db";
 import { requireRestaurant } from "@/lib/supabase";
 import { Casca } from "@/components/Casca";
 import { FormularioRestaurante } from "@/components/FormularioRestaurante";

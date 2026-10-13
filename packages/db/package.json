@@ -1,5 +1,5 @@
 {
-  "name": "@pede-esse/db",
+  "name": "@prattzo/db",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@pede-esse/core": "*",
+    "@prattzo/core": "*",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.0"
   },

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { createPublicClient, getPublicMenu } from "@pede-esse/db";
+import { createPublicClient, getPublicMenu } from "@prattzo/db";
 import { Cardapio } from "@/components/Cardapio";
 
 export const revalidate = 60;

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useFormState } from "react-dom";
-import type { Category, MediaItem } from "@pede-esse/core";
-import { DESCRICAO_MINIMA, estaEsgotado, formatCents, priceLabel } from "@pede-esse/core";
+import type { Category, MediaItem } from "@prattzo/core";
+import { DESCRICAO_MINIMA, estaEsgotado, formatCents, priceLabel } from "@prattzo/core";
 import {
   alternarAtivo, alternarDestaque, alternarEsgotado, criarCategoria, criarPrato,
   excluirCategoria, excluirPrato, moverCategoria, moverPrato, renomearCategoria, salvarPrato,

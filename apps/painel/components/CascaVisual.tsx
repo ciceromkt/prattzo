@@ -1,4 +1,4 @@
-import { BRAND } from "@pede-esse/core";
+import { BRAND } from "@prattzo/core";
 
 /**
  * A moldura do painel: barra lateral fixa à esquerda e uma área de conteúdo.

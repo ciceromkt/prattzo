@@ -1,4 +1,4 @@
-import { BRAND } from "@pede-esse/core";
+import { BRAND } from "@prattzo/core";
 import { ApagarDados } from "@/components/ApagarDados";
 
 export const metadata = { title: `Privacidade — ${BRAND.name}` };

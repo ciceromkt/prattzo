@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
-import { createAuthedClient, getRestaurantDoUsuario } from "@pede-esse/db";
+import { createAuthedClient, getRestaurantDoUsuario } from "@prattzo/db";
 
 /** Cliente autenticado para Server Component e Route Handler. */
 export function serverClient(): SupabaseClient {

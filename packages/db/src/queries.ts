@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Category, Dish, MediaItem, PublicMenu, Restaurant } from "@pede-esse/core";
-import { montarGrupos } from "@pede-esse/core";
+import type { Category, Dish, MediaItem, PublicMenu, Restaurant } from "@prattzo/core";
+import { montarGrupos } from "@prattzo/core";
 import type { AtencaoRow, CategoryRow, DishRow, EventType, MediaRow, RestaurantRow, ResumoRow } from "./schema";
 
 function toRestaurant(r: RestaurantRow): Restaurant {

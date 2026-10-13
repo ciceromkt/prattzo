@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { BRAND } from "@pede-esse/core";
+import { BRAND } from "@prattzo/core";
 import "./globals.css";
 
 export const metadata: Metadata = {

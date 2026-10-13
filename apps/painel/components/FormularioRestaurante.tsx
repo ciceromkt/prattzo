@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormState } from "react-dom";
-import type { Restaurant } from "@pede-esse/core";
+import type { Restaurant } from "@prattzo/core";
 import { salvarRestaurante, type ActionState } from "@/lib/actions";
 import { BotaoEnviar } from "./BotaoEnviar";
 

@@ -1,7 +1,7 @@
 "use client";
 
-import type { Dish, Sugestao } from "@pede-esse/core";
-import { capaDoPrato, priceLabel } from "@pede-esse/core";
+import type { Dish, Sugestao } from "@prattzo/core";
+import { capaDoPrato, priceLabel } from "@prattzo/core";
 
 interface Linha {
   dish: Dish;

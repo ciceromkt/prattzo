@@ -1,5 +1,5 @@
 {
-  "name": "pede-esse",
+  "name": "prattzo",
   "private": true,
   "version": "0.1.0",
   "description": "Cardápio digital com vídeo vertical e pedido montado pelo cliente, para restaurantes e bares",
@@ -8,10 +8,10 @@
     "apps/*"
   ],
   "scripts": {
-    "dev:cardapio": "npm run dev -w @pede-esse/cardapio",
-    "dev:painel": "npm run dev -w @pede-esse/painel",
-    "build": "npm run build -w @pede-esse/cardapio && npm run build -w @pede-esse/painel",
-    "test": "npm run test -w @pede-esse/core",
+    "dev:cardapio": "npm run dev -w @prattzo/cardapio",
+    "dev:painel": "npm run dev -w @prattzo/painel",
+    "build": "npm run build -w @prattzo/cardapio && npm run build -w @prattzo/painel",
+    "test": "npm run test -w @prattzo/core",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
   },

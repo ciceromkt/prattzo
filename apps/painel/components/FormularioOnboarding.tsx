@@ -2,7 +2,7 @@
 
 import { useFormState } from "react-dom";
 import { useState } from "react";
-import { slugify } from "@pede-esse/core";
+import { slugify } from "@prattzo/core";
 import { criarRestaurante, type ActionState } from "@/lib/actions";
 import { BotaoEnviar } from "./BotaoEnviar";
 

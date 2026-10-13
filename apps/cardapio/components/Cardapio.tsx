@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Dish, MenuGroup, PublicMenu } from "@pede-esse/core";
-import { capaDaCategoria, filaDeStories, orderTotal, sugestoesParaPedido, videoDoPrato } from "@pede-esse/core";
+import type { Dish, MenuGroup, PublicMenu } from "@prattzo/core";
+import { capaDaCategoria, filaDeStories, orderTotal, sugestoesParaPedido, videoDoPrato } from "@prattzo/core";
 import { Stories } from "./Stories";
 import { ListaCorrida } from "./ListaCorrida";
 import { Pedido } from "./Pedido";

@@ -1,4 +1,4 @@
-import { BRAND } from "@pede-esse/core";
+import { BRAND } from "@prattzo/core";
 import { FormularioEntrar } from "@/components/FormularioEntrar";
 
 export const metadata = { title: `Entrar — ${BRAND.name}` };
