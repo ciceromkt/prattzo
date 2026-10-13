@@ -1,0 +1,121 @@
+/* Tokens compartilhados entre o app do cliente e o painel do dono.
+   Contraste verificado para AA no texto principal (requisito de acessibilidade). */
+
+:root {
+  --cor-tinta: #12100f;
+  --cor-tinta-media: #4a4542;
+  --cor-tinta-fraca: #7a736e;
+  --cor-papel: #fbf8f4;
+  --cor-papel-alto: #ffffff;
+  --cor-borda: #e7e0d8;
+  --cor-borda-forte: #cfc5ba;
+
+  /* Laranja-brasa: o destaque da marca. */
+  --cor-marca: #d4461f;
+  --cor-marca-escura: #a8330f;
+  --cor-marca-fraca: #fdeee8;
+
+  /* Âmbar: usado onde a ação é escolher (capa, salvar), para não competir
+     com o laranja da marca, que marca presença e não ação. */
+  --cor-acento: #b8791f;
+
+  --cor-sucesso: #1f7a4d;
+  --cor-alerta: #9a5b00;
+  --cor-erro: #b3261e;
+  --cor-erro-fraca: #fdeceb;
+
+  --raio-p: 8px;
+  --raio-m: 14px;
+  --raio-g: 22px;
+
+  --sombra-p: 0 1px 2px rgba(18, 16, 15, 0.06);
+  --sombra-m: 0 4px 16px rgba(18, 16, 15, 0.08);
+  --sombra-g: 0 12px 32px rgba(18, 16, 15, 0.14);
+
+  --fonte: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --alvo-toque: 44px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) {
+    --cor-tinta: #f5f1ec;
+    --cor-tinta-media: #c2bab3;
+    --cor-tinta-fraca: #948b84;
+    --cor-papel: #141211;
+    --cor-papel-alto: #1e1b19;
+    --cor-borda: #332e2b;
+    --cor-borda-forte: #4a443f;
+    --cor-marca: #ff7a4d;
+    --cor-marca-escura: #ff9470;
+    --cor-marca-fraca: #2a1711;
+    --cor-sucesso: #5ec98f;
+    --cor-alerta: #e0a33c;
+    --cor-erro: #ff8b82;
+    --cor-erro-fraca: #2d1413;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--cor-papel);
+  color: var(--cor-tinta);
+  font-family: var(--fonte);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--cor-marca);
+}
+
+:focus-visible {
+  outline: 3px solid var(--cor-marca);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

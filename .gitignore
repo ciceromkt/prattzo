@@ -1,0 +1,16 @@
+node_modules
+.next
+out
+dist
+coverage
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+.vercel
+supabase/.temp
+
+# Mídia agora vive no Supabase Storage, não no repositório.
+apps/*/public/fotos
+apps/*/public/videos

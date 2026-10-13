@@ -1,0 +1,68 @@
+export const MAX_VIDEO_SECONDS = 15;
+export const MAX_VIDEO_BYTES = 20 * 1024 * 1024;
+export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+export const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm"] as const;
+export const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+/** Proporção vertical esperada (9:16), com tolerância. */
+export const TARGET_ASPECT = 9 / 16;
+export const ASPECT_TOLERANCE = 0.25;
+
+export interface MediaValidationInput {
+  type: string;
+  size: number;
+  durationSeconds?: number;
+  width?: number;
+  height?: number;
+}
+
+export interface MediaValidation {
+  ok: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+export function validateVideo(input: MediaValidationInput): MediaValidation {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  if (!(ALLOWED_VIDEO_TYPES as readonly string[]).includes(input.type)) {
+    errors.push("Formato não aceito. Envie MP4, MOV ou WebM.");
+  }
+  if (input.size > MAX_VIDEO_BYTES) {
+    errors.push(`Vídeo acima de ${Math.round(MAX_VIDEO_BYTES / 1024 / 1024)} MB. Comprima antes de enviar.`);
+  }
+  if (input.durationSeconds !== undefined && input.durationSeconds > MAX_VIDEO_SECONDS + 0.5) {
+    errors.push(`Vídeo com ${input.durationSeconds.toFixed(1)}s. O limite é ${MAX_VIDEO_SECONDS}s.`);
+  }
+  if (input.width && input.height) {
+    const aspect = input.width / input.height;
+    if (aspect > TARGET_ASPECT + ASPECT_TOLERANCE) {
+      warnings.push("O vídeo não é vertical. No celular ele aparece com tarjas.");
+    }
+    if (input.height < 720) {
+      warnings.push("Resolução baixa (menos de 720p de altura).");
+    }
+  }
+  return { ok: errors.length === 0, errors, warnings };
+}
+
+export function validatePhoto(input: MediaValidationInput): MediaValidation {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  if (!(ALLOWED_PHOTO_TYPES as readonly string[]).includes(input.type)) {
+    errors.push("Formato não aceito. Envie JPG, PNG ou WebP.");
+  }
+  if (input.size > MAX_PHOTO_BYTES) {
+    errors.push(`Imagem acima de ${Math.round(MAX_PHOTO_BYTES / 1024 / 1024)} MB.`);
+  }
+  if (input.width && input.height && input.width < 800) {
+    warnings.push("Imagem pequena. O ideal é pelo menos 1080px de largura.");
+  }
+  return { ok: errors.length === 0, errors, warnings };
+}
+
+/** Caminho determinístico dentro do bucket/storage. */
+export function mediaPath(restaurantId: string, dishId: string, kind: "foto" | "video", ext: string): string {
+  const safeExt = ext.replace(/[^a-z0-9]/gi, "").toLowerCase() || "bin";
+  return `${restaurantId}/${dishId}/${kind}-${Date.now()}.${safeExt}`;
+}
