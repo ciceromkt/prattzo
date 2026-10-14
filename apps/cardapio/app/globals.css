@@ -96,15 +96,22 @@ button { font: inherit; color: inherit; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid var(--fio-forte); border-radius: 999px; background: rgba(0,0,0,.4); backdrop-filter: blur(10px); font-size: .8rem; font-weight: 600; text-decoration: none; cursor: pointer; }
 
 /* ------------------------------------------------------------- grade */
-.grade { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 4px 16px 40px; }
-.categoria { position: relative; aspect-ratio: 3 / 4; display: flex; align-items: flex-end; padding: 0; border: 0; border-radius: 16px; overflow: hidden; background: none; cursor: pointer; }
+/* Uma coluna: a faixa de atalhos acima já mostra as seis categorias de uma vez,
+   então a grade não precisa mais caber inteira na tela — fica livre para dar o
+   tamanho que a foto de comida merece. */
+.grade { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 4px 16px 40px; }
+.categoria { position: relative; aspect-ratio: 3 / 2; display: flex; align-items: flex-end; padding: 0; border: 0; border-radius: 16px; overflow: hidden; background: none; cursor: pointer; }
 .categoria--sem-capa { background: linear-gradient(145deg, #1d1917 0%, #100d0c 78%); }
 .categoria--sem-capa::after { content: "sem capa"; position: absolute; top: 14px; right: 15px; font-size: .64rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.3); }
 .categoria__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .categoria__veu { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 32%, rgba(8,6,5,.86) 100%); }
-.categoria__play { position: absolute; top: 12px; left: 12px; padding: 4px 10px; border-radius: 99px; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); font-size: .68rem; font-weight: 700; }
+.categoria__play { position: absolute; top: 14px; left: 14px; display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 14px 7px 9px; border: 1px solid rgba(224,163,65,.5); border-radius: 99px;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(8px); font-size: .8rem; font-weight: 700; }
+.categoria__play-ic { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--ambar); color: #1d1405; font-size: .6rem; padding-left: 2px; }
 .categoria__texto { position: relative; width: 100%; padding: 14px; text-align: left; }
-.categoria__nome { display: block; font-family: var(--display); font-size: 1.22rem; font-weight: 600; letter-spacing: -.02em; }
+.categoria__nome { display: block; font-family: var(--display); font-size: 1.5rem; font-weight: 600; letter-spacing: -.02em; }
 .categoria__conta { display: block; margin-top: 2px; font-size: .74rem; color: var(--neve-media); }
 
 /* ----------------------------------------------------------- stories */

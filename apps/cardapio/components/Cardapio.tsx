@@ -322,8 +322,11 @@ function Capa({
   const { restaurant, grupos } = menu;
   const videoRef = useVideoAmbiente();
   // Sem poster a capa fica preta até o vídeo carregar — no 4G do bar, isso é a
-  // primeira impressão. A primeira capa de categoria serve de quadro inicial.
-  const poster = grupos.map((g) => capaDaCategoria(g)).find(Boolean) ?? undefined;
+  // primeira impressão. Pega a capa da ÚLTIMA categoria, não da primeira: em
+  // coluna única o primeiro cartão encosta no topo, e a mesma foto duas vezes,
+  // uma embaixo da outra, parece defeito.
+  const capas = grupos.map((g) => capaDaCategoria(g)).filter(Boolean);
+  const poster = (capas[capas.length - 1] ?? undefined) as string | undefined;
   return (
     <div className="rolagem">
       <header className="hero">
@@ -406,7 +409,15 @@ function Capa({
                   <span className="categoria__veu" />
                 </>
               ) : null}
-              {comVideo > 0 ? <span className="categoria__play">▶ {comVideo} em vídeo</span> : null}
+              {/* Em cartão grande isto deixa de ser detalhe e vira argumento:
+                  é a única coisa na tela que a lista de fotos do concorrente
+                  não tem como dizer. */}
+              {comVideo > 0 ? (
+                <span className="categoria__play">
+                  <span className="categoria__play-ic" aria-hidden="true">▶</span>
+                  {comVideo} em vídeo
+                </span>
+              ) : null}
               <span className="categoria__texto">
                 <span className="categoria__nome">{g.categoria.nome}</span>
                 <span className="categoria__conta">
