@@ -50,6 +50,11 @@ export function Stories({
   const [pausado, setPausado] = useState(false);
   const [som, setSom] = useState(false);
   const [aberto, setAberto] = useState(false);
+  /**
+   * Por que o vídeo não está tocando. São dois casos diferentes, e tratá-los
+   * como um só mente para o cliente — ver o efeito abaixo.
+   */
+  const [travado, setTravado] = useState<null | "gesto" | "falha">(null);
   /** Qual mídia DESTE prato está no palco. Zera a cada prato novo. */
   const [iMidia, setIMidia] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -93,6 +98,7 @@ export function Stories({
     entrou.current = Date.now();
     setAberto(false);
     setIMidia(0);
+    setTravado(null);
     return () => {
       track({ restaurantId, tipo: "viu_prato", dishId: prato.id, ms: Date.now() - entrou.current });
     };
@@ -109,25 +115,65 @@ export function Stories({
   }, [prato?.id, pares.length > 0]);
 
   // Foto avança sozinha; vídeo, quem manda é o fim dele. Lendo os detalhes,
-  // nada avança: o cliente está no meio de uma frase.
+  // nada avança: o cliente está no meio de uma frase. Vídeo que não vai rodar
+  // ("falha") conta como foto — senão o story para de vez neste prato.
+  const videoVivo = atual?.tipo === "video" && travado !== "falha";
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
-    if (!prato || pausado || aberto || atual?.tipo === "video") return;
+    if (!prato || pausado || aberto || videoVivo) return;
     timer.current = setTimeout(() => avancar(1), DUR_SEM_VIDEO * 1000);
     return () => { if (timer.current) clearTimeout(timer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prato, pausado, aberto, atual]);
+  }, [prato, pausado, aberto, atual, videoVivo]);
 
+  /**
+   * Tocar o vídeo — e separar os dois motivos de ele não tocar.
+   *
+   * "gesto" (NotAllowedError): o aparelho exige um toque antes de qualquer
+   * vídeo. É o iPhone em Modo de Baixo Consumo, que recusa autoplay mesmo
+   * mudo e desenha um botão de play no meio da tela — e não é caso raro: quem
+   * está no bar às 22h está com a bateria no fim. Aqui a capa do vídeo entra na
+   * frente com um convite, e o próximo toque toca em vez de avançar; um toque é
+   * exatamente o gesto que o iOS pede, e dali em diante os outros tocam
+   * sozinhos.
+   *
+   * "falha": o arquivo não carrega ou o formato não roda. Toque nenhum resolve,
+   * então não se promete nada ao cliente: fica a foto e o story segue sozinho,
+   * como faz com qualquer item sem vídeo. Sem isso ele travaria para sempre
+   * neste prato, porque quem avança o story é o fim do vídeo.
+   */
   useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
     el.muted = !som;
-    if (pausado || aberto) el.pause();
-    else void el.play().catch(() => undefined);
+    el.setAttribute("playsinline", "");
+    if (pausado || aberto) return el.pause();
+    let vivo = true;
+    el.play().then(
+      () => { if (vivo) setTravado(null); },
+      (erro: unknown) => {
+        if (!vivo) return;
+        const nome = erro instanceof Error ? erro.name : "";
+        // AbortError não é defeito: é o próprio navegador cancelando este play
+        // porque outra mídia entrou no lugar. Marcar "falha" aqui condenaria um
+        // vídeo bom só porque o cliente passou rápido pelos pratos.
+        if (nome === "AbortError") return;
+        setTravado(nome === "NotAllowedError" ? "gesto" : "falha");
+      },
+    );
+    return () => { vivo = false; };
   }, [pausado, som, aberto, atual]);
 
+  /** Libera o vídeo no toque do cliente, que é o gesto que o iOS pede. */
+  const destravar = () => {
+    const el = videoRef.current;
+    if (!el) return setTravado(null);
+    el.muted = !som;
+    el.play().then(() => setTravado(null), () => setTravado("falha"));
+  };
+
   if (!prato) return null;
-  const dur = atual?.tipo === "video" ? atual.duracao_s ?? DUR_SEM_VIDEO : DUR_SEM_VIDEO;
+  const dur = videoVivo && atual ? atual.duracao_s ?? DUR_SEM_VIDEO : DUR_SEM_VIDEO;
   const temDesc = prato.descricao.length > 0;
   const temDetalhe = prato.ingredientes.length > 0 || prato.serve.length > 0 || prato.descricao.length > 92;
   const primeiro = idx === 0 && iMidia === 0 && fila.length > 1;
@@ -137,18 +183,25 @@ export function Stories({
     <div className={`stories${pausado ? " stories--pausado" : ""}`}>
       <div className="stories__palco">
         {atual?.tipo === "video" ? (
-          <video
-            ref={videoRef}
-            key={atual.id}
-            className="stories__video"
-            src={atual.url}
-            poster={atual.poster_url ?? undefined}
-            playsInline
-            autoPlay
-            preload="auto"
-            onEnded={() => avancar(1)}
-            aria-label={`Vídeo: ${prato.nome}`}
-          />
+          <>
+            <video
+              ref={videoRef}
+              key={atual.id}
+              className={`stories__video${travado ? " stories__video--parado" : ""}`}
+              src={atual.url}
+              poster={atual.poster_url ?? undefined}
+              playsInline
+              autoPlay
+              preload="auto"
+              onEnded={() => avancar(1)}
+              aria-label={`Vídeo: ${prato.nome}`}
+            />
+            {/* Depois do vídeo no documento, para pintar por cima dele: o botão
+                de play que o iOS desenha não sai por CSS, mas fica atrás. */}
+            {travado && atual.poster_url ? (
+              <img className="stories__foto" src={atual.poster_url} alt={prato.nome} />
+            ) : null}
+          </>
         ) : atual ? (
           <img className="stories__foto" key={atual.id} src={atual.url} alt={prato.nome} />
         ) : capaDoPrato(prato) ? (
@@ -161,9 +214,27 @@ export function Stories({
         <span className="stories__sombra-base" />
 
         <div className="stories__toque">
-          <button type="button" onClick={() => avancar(-1)} aria-label="Anterior" />
-          <button type="button" onClick={() => avancar(1)} aria-label="Próximo" />
+          <button
+            type="button"
+            onClick={() => (travado === "gesto" ? destravar() : avancar(-1))}
+            aria-label={travado === "gesto" ? "Assistir" : "Anterior"}
+          />
+          <button
+            type="button"
+            onClick={() => (travado === "gesto" ? destravar() : avancar(1))}
+            aria-label={travado === "gesto" ? "Assistir" : "Próximo"}
+          />
         </div>
+
+        {/* Sem este aviso o cliente fica olhando uma foto parada sem saber que
+            há vídeo ali — e a culpa parece do cardápio, não do modo de economia. */}
+        {travado === "gesto" ? (
+          <button type="button" className="destravar" onClick={destravar}>
+            <span className="destravar__ic" aria-hidden="true">▶</span>
+            Toque para assistir
+            <small>O modo de economia de bateria está segurando o vídeo</small>
+          </button>
+        ) : null}
 
         <div className="stories__topo">
           <button type="button" className="redondo" onClick={onFechar} aria-label="Voltar">←</button>

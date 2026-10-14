@@ -69,6 +69,12 @@ button { font: inherit; color: inherit; }
 /* ---------------------------------------------------------------- capa */
 .hero { position: relative; height: 62dvh; min-height: 320px; display: flex; align-items: flex-end; overflow: hidden; }
 .hero__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* Vídeo que o aparelho recusou tocar sai da frente: o iPhone em Modo de Baixo
+   Consumo desenha um botão de play por cima dele, e esse botão não é removível
+   por CSS — some junto com o elemento. Atrás fica a foto, que é o que o vídeo
+   mostraria parado. Transparente, e não `display: none`: escondido de verdade o
+   iOS se recusa a tocar, e aí o toque do cliente não traria o vídeo de volta. */
+.hero__video--parado { opacity: 0; }
 .hero__veu { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,11,9,.55) 0%, rgba(14,11,9,.1) 38%, var(--breu) 97%); }
 /**
  * O bloco da capa é centralizado.
@@ -119,6 +125,16 @@ button { font: inherit; color: inherit; }
 .stories__palco { position: relative; height: 100%; }
 .stories__video, .stories__foto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .stories__sem-midia { position: absolute; inset: 0; background: radial-gradient(130% 80% at 50% 8%, #22222b 0%, #0b0b10 70%); }
+/* Mesmo motivo da capa: vídeo recusado some, e a capa dele entra na frente. */
+.stories__video--parado { opacity: 0; }
+.destravar { position: absolute; left: 50%; top: 42%; z-index: 5; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 16px 22px; border: 1px solid var(--fio-forte); border-radius: 18px;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(12px); color: var(--neve);
+  font-size: .95rem; font-weight: 700; text-align: center; cursor: pointer; }
+.destravar__ic { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 3px;
+  border-radius: 50%; background: var(--ambar); color: #1d1405; font-size: 1.05rem; padding-left: 3px; }
+.destravar small { max-width: 17em; font-size: .74rem; font-weight: 500; line-height: 1.35; color: var(--neve-media); }
 .stories__sombra-topo { position: absolute; top: 0; left: 0; right: 0; height: 180px; background: linear-gradient(180deg, rgba(0,0,0,.72), transparent); }
 .stories__sombra-base { position: absolute; bottom: 0; left: 0; right: 0; height: 74%; background: linear-gradient(0deg, rgba(0,0,0,.94) 0%, rgba(0,0,0,.82) 26%, rgba(0,0,0,.35) 66%, transparent 100%); }
 

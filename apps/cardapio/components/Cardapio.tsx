@@ -318,19 +318,59 @@ export function Cardapio({ menu }: { menu: PublicMenu }) {
 }
 
 /**
- * O atributo `muted` como prop do React chega depois da primeira renderização,
- * e aí o navegador já bloqueou o autoplay. Por isso ele é posto na mão.
+ * O vídeo de ambiente da capa, e o que fazer quando ele não pode tocar.
+ *
+ * Duas coisas separadas:
+ *
+ * 1. O atributo `muted` como prop do React chega depois da primeira
+ *    renderização, e aí o navegador já bloqueou o autoplay. Por isso ele é
+ *    posto na mão, junto com `playsinline`.
+ *
+ * 2. Tem caso em que o iPhone recusa de qualquer jeito — o Modo de Baixo
+ *    Consumo bloqueia autoplay de TODO vídeo, inclusive mudo, e desenha um
+ *    botão de play gigante no meio da tela. É comum no cliente real: quem está
+ *    no bar às 22h está com a bateria no fim. Nesse caso o vídeo some e fica a
+ *    foto, que é o que o vídeo mostraria parado — melhor uma capa bonita do que
+ *    um play que ninguém pediu. Se o cliente tocar na tela, tenta de novo: o
+ *    toque é o gesto que o iOS exige.
  */
 function useVideoAmbiente() {
   const ref = useRef<HTMLVideoElement | null>(null);
+  const [tocando, setTocando] = useState(true);
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     el.muted = true;
     el.defaultMuted = true;
-    void el.play().catch(() => undefined);
+    el.setAttribute("muted", "");
+    el.setAttribute("playsinline", "");
+
+    let vivo = true;
+    const tentar = () => {
+      el.play().then(
+        () => { if (vivo) setTocando(true); },
+        () => { if (vivo) setTocando(false); },
+      );
+    };
+    tentar();
+
+    // `play()` pode resolver e o quadro nunca andar. Um segundo depois, se
+    // ainda está parado, é porque não vai tocar.
+    const conferir = setTimeout(() => { if (vivo && el.paused) setTocando(false); }, 1100);
+    const noToque = () => tentar();
+    document.addEventListener("touchstart", noToque, { passive: true });
+    document.addEventListener("click", noToque);
+
+    return () => {
+      vivo = false;
+      clearTimeout(conferir);
+      document.removeEventListener("touchstart", noToque);
+      document.removeEventListener("click", noToque);
+    };
   }, []);
-  return ref;
+
+  return { ref, tocando };
 }
 
 function Capa({
@@ -342,7 +382,7 @@ function Capa({
   onCompartilhar: () => void;
 }) {
   const { restaurant, grupos } = menu;
-  const videoRef = useVideoAmbiente();
+  const { ref: videoRef, tocando } = useVideoAmbiente();
   // Sem poster a capa fica preta até o vídeo carregar — no 4G do bar, isso é a
   // primeira impressão. Pega a capa da ÚLTIMA categoria, não da primeira: em
   // coluna única o primeiro cartão encosta no topo, e a mesma foto duas vezes,
@@ -352,13 +392,14 @@ function Capa({
   return (
     <div className="rolagem">
       <header className="hero">
-        {!restaurant.video_capa_url && poster ? (
-          <img className="hero__video" src={poster} alt="" />
-        ) : null}
+        {/* A foto fica SEMPRE atrás do vídeo, não só quando não há vídeo: é ela
+            que aparece enquanto o vídeo carrega e é ela que fica se o aparelho
+            recusar tocar. Sem isso a capa é um retângulo preto no 4G do bar. */}
+        {poster ? <img className="hero__video" src={poster} alt="" /> : null}
         {restaurant.video_capa_url ? (
           <video
             ref={videoRef}
-            className="hero__video"
+            className={`hero__video${tocando ? "" : " hero__video--parado"}`}
             src={restaurant.video_capa_url}
             poster={poster}
             muted
