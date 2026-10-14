@@ -245,6 +245,7 @@ function FormPrato({
   return (
     <div className="editor-form">
       <form action={acao}>
+        <p className="editor-form__secao">Dados do item</p>
         {prato ? (
           <>
             <input type="hidden" name="id" value={prato.id} />
@@ -334,9 +335,26 @@ function FormPrato({
         {estado.erro ? <p className="contagem contagem--curta">{estado.erro}</p> : null}
         {estado.ok ? <p className="contagem">{estado.ok}</p> : null}
 
-        <div className="linha-acoes">
-          <button type="submit" className="bt bt--ouro">{prato ? "Salvar" : "Adicionar"}</button>
-          <button type="button" className="bt" onClick={onFechar}>Cancelar</button>
+        {/**
+         * A barra de salvar gruda no rodapé da tela enquanto este formulário
+         * está aberto — e diz o que ela salva.
+         *
+         * Antes ela ficava solta no meio do cartão, logo acima de "Fotos e
+         * vídeo", e parecia salvar só a etapa anterior. Parecia porque É: foto
+         * e vídeo gravam sozinhos no envio, e o Salvar nunca foi deles. O erro
+         * não era o botão estar no lugar errado, era a tela não dizer de quem
+         * ele é.
+         */}
+        <div className="editor-form__salvar">
+          <div className="linha-acoes">
+            <button type="submit" className="bt bt--ouro">{prato ? "Salvar" : "Adicionar"}</button>
+            <button type="button" className="bt" onClick={onFechar}>Cancelar</button>
+          </div>
+          <p className="contagem">
+            {prato
+              ? "Salva os dados acima. Fotos e vídeo gravam sozinhos no envio — não dependem deste botão."
+              : "Depois de adicionar, abre o espaço para enviar as fotos e o vídeo."}
+          </p>
         </div>
       </form>
 

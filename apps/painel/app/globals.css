@@ -883,3 +883,24 @@ textarea.campo--curto { min-height: 92px; }
 .harmo-par__nota { display: block; margin-top: 3px; font-size: .82rem; color: var(--cor-tinta-media, var(--cor-tinta-fraca)); }
 .harmo-par__nota--vazia { font-style: italic; color: var(--cor-tinta-fraca); }
 .harmo-novo { padding-top: 14px; border-top: 1px solid var(--cor-borda); }
+
+/* ------------------------------------------- seções do editor de item */
+/* O cartão de edição tem duas metades que funcionam de jeitos diferentes:
+   dados, que precisam de Salvar, e mídia, que grava no envio. Sem um título em
+   cada uma, o Salvar no meio parecia salvar só o que estava acima dele. */
+.editor-form__secao { display: flex; align-items: center; gap: 9px; margin: 0 0 12px;
+  font-size: .7rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--cor-tinta-fraca); }
+.midia-bloco .editor-form__secao { margin-top: 2px; }
+.selo-auto { padding: 3px 9px; border: 1px solid var(--cor-marca); border-radius: 999px;
+  background: var(--cor-marca-fraca); color: var(--cor-marca);
+  font-size: .62rem; font-weight: 800; letter-spacing: .08em; }
+
+/* A barra de salvar acompanha o rodapé da tela enquanto o formulário está
+   aberto — em item com descrição e ingredientes o cartão passa da altura da
+   tela, e o botão ficava fora de vista bem na hora de usá-lo. */
+.editor-form__salvar { position: sticky; bottom: 0; z-index: 2;
+  margin: 14px -14px -15px; padding: 11px 14px 13px;
+  border-top: 1px solid var(--cor-borda); background: var(--cor-papel-alto); }
+.editor-form__salvar .linha-acoes { margin-top: 0; }
+.editor-form__salvar .contagem { margin: 7px 0 0; }

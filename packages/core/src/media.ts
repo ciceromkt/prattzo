@@ -32,7 +32,13 @@ export function validateVideo(input: MediaValidationInput): MediaValidation {
     errors.push(`Vídeo acima de ${Math.round(MAX_VIDEO_BYTES / 1024 / 1024)} MB. Comprima antes de enviar.`);
   }
   if (input.durationSeconds !== undefined && input.durationSeconds > MAX_VIDEO_SECONDS + 0.5) {
-    errors.push(`Vídeo com ${input.durationSeconds.toFixed(1)}s. O limite é ${MAX_VIDEO_SECONDS}s.`);
+    // Diz quanto cortar: "o limite é 15s" sozinho deixa a conta para o dono,
+    // que está com o vídeo aberto no celular e quer saber onde parar.
+    const sobra = input.durationSeconds - MAX_VIDEO_SECONDS;
+    errors.push(
+      `Vídeo com ${input.durationSeconds.toFixed(1)}s. O limite é ${MAX_VIDEO_SECONDS}s — `
+      + `corte ${sobra.toFixed(1)}s e envie de novo.`,
+    );
   }
   if (input.width && input.height) {
     const aspect = input.width / input.height;

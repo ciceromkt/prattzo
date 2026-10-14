@@ -28,7 +28,12 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
       ? validateVideo({ type: file.type, size: file.size, ...medidas })
       : validatePhoto({ type: file.type, size: file.size, ...medidas });
 
-    if (!check.ok) return setErro(check.errors.join(" "));
+    if (!check.ok) {
+      // Limpa o campo junto com o aviso: com o nome do arquivo ainda na tela,
+      // o recusado parecia aceito, e o dono ficava esperando ele aparecer.
+      if (input.current) input.current.value = "";
+      return setErro(check.errors.join(" "));
+    }
     setAvisos(check.warnings);
 
     setEnviando(true);
@@ -68,7 +73,11 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
 
   return (
     <div className="midia-bloco">
-      <span className="campo-rotulo">Fotos e vídeo</span>
+      <p className="editor-form__secao">
+        Fotos e vídeo
+        {/* O dono precisa saber disto ANTES de procurar um botão de salvar. */}
+        <span className="selo-auto">grava sozinho</span>
+      </p>
 
       {midias.length > 0 ? (
         <div className="midia-lista">
@@ -102,7 +111,11 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
         </div>
       ) : null}
 
-      <p className="contagem">A primeira imagem é a capa do item. Use as setas para reordenar.</p>
+      <p className="contagem">
+        {midias.length > 0
+          ? "Já no cardápio. A primeira imagem é a capa do item; use as setas para reordenar."
+          : "O que você enviar aqui entra no cardápio na hora."}
+      </p>
 
       <input
         ref={input}
