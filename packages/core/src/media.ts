@@ -7,6 +7,18 @@ export const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"] as 
 export const TARGET_ASPECT = 9 / 16;
 export const ASPECT_TOLERANCE = 0.25;
 
+/**
+ * Tamanho do recorte que o dono escolhe no envio da foto.
+ *
+ * 9:16 porque é a tela inteira do celular, que é onde a foto do prato aparece
+ * grande. A foto de restaurante quase sempre chega deitada, e encaixar deitado
+ * em 9:16 por conta própria corta o prato ao meio — daí a tela de recorte.
+ * 1080 de largura é o limite: é o que o celular mostra, e subir mais que isso
+ * só pesa no 4G do salão.
+ */
+export const RECORTE_LARGURA = 1080;
+export const RECORTE_ALTURA = 1920;
+
 export interface MediaValidationInput {
   type: string;
   size: number;

@@ -467,6 +467,42 @@ export async function excluirMidia(fd: FormData): Promise<void> {
   await atualiza(restaurant.slug);
 }
 
+/**
+ * Troca o arquivo de uma mídia que já está no cardápio, mantendo o lugar dela.
+ *
+ * É o reenquadrar: a foto volta recortada do jeito que o dono escolheu, e
+ * precisa entrar no MESMO item, na MESMA posição — recadastrar jogaria a capa
+ * do prato para o fim da fila. O arquivo antigo é apagado do Storage porque
+ * ninguém mais aponta para ele; se a remoção falhar, o cardápio já está certo e
+ * o que sobra é um arquivo órfão, não um erro para o dono.
+ */
+export async function substituirMidia(input: { id: string; url: string }): Promise<{ ok: boolean }> {
+  const { client, restaurant } = await requireRestaurant();
+
+  const { data: antiga } = await client
+    .from("dish_media").select("url, tipo").eq("id", input.id)
+    .eq("restaurant_id", restaurant.id).maybeSingle<{ url: string; tipo: string }>();
+  if (!antiga) return { ok: false };
+
+  const { error } = await client
+    .from("dish_media")
+    .update({ url: input.url, poster_url: antiga.tipo === "video" ? input.url : null })
+    .eq("id", input.id).eq("restaurant_id", restaurant.id);
+  if (error) {
+    reportError("falha_substituir_midia", error);
+    return { ok: false };
+  }
+
+  const caminho = antiga.url.split("/object/public/midia/")[1];
+  if (caminho && caminho !== input.url.split("/object/public/midia/")[1]) {
+    const { error: eRemover } = await client.storage.from("midia").remove([decodeURIComponent(caminho)]);
+    if (eRemover) reportError("falha_remover_midia_antiga", eRemover, { caminho });
+  }
+
+  await atualiza(restaurant.slug);
+  return { ok: true };
+}
+
 export async function moverMidia(fd: FormData): Promise<void> {
   const { client, restaurant } = await requireRestaurant();
   const { data } = await client

@@ -904,3 +904,35 @@ textarea.campo--curto { min-height: 92px; }
   border-top: 1px solid var(--cor-borda); background: var(--cor-papel-alto); }
 .editor-form__salvar .linha-acoes { margin-top: 0; }
 .editor-form__salvar .contagem { margin: 7px 0 0; }
+
+/* ------------------------------------------------ enquadrar a foto */
+/* O quadro é 9:16 porque é a tela do celular do cliente: o dono vê o recorte
+   no formato em que ele vai aparecer, não numa caixa qualquer. */
+.recorte { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center;
+  padding: 16px; background: rgba(0,0,0,.72); backdrop-filter: blur(6px); }
+.recorte__painel { width: min(420px, 100%); max-height: 94dvh; overflow-y: auto;
+  padding: 16px; border: 1px solid var(--cor-borda-forte); border-radius: 14px;
+  background: var(--cor-papel); }
+.recorte__cabeca { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.recorte__cabeca .editor-form__secao { margin: 0; }
+.recorte__quadro { position: relative; aspect-ratio: 9 / 16; max-height: 58dvh; margin: 10px auto 0;
+  overflow: hidden; border-radius: 12px; background: #0d0b0a; cursor: grab; touch-action: none;
+  user-select: none; }
+.recorte__quadro:active { cursor: grabbing; }
+.recorte__foto, .recorte__fundo { position: absolute; max-width: none; pointer-events: none; }
+.recorte__fundo { filter: blur(18px) brightness(.62); transform: scale(1.06); }
+/* Terços: ajuda a parar o prato num lugar que não seja o centro morto. */
+.recorte__guia { position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(to right, transparent 33.3%, rgba(255,255,255,.16) 33.3% 33.4%, transparent 33.4%,
+      transparent 66.6%, rgba(255,255,255,.16) 66.6% 66.7%, transparent 66.7%),
+    linear-gradient(to bottom, transparent 33.3%, rgba(255,255,255,.16) 33.3% 33.4%, transparent 33.4%,
+      transparent 66.6%, rgba(255,255,255,.16) 66.6% 66.7%, transparent 66.7%); }
+.recorte__carregando { position: absolute; inset: 0; display: grid; place-items: center;
+  margin: 0; padding: 20px; text-align: center; color: var(--cor-tinta-fraca); font-size: .88rem; }
+.recorte__dica { margin: 9px 0 0; }
+.recorte__controles { margin-top: 10px; }
+.recorte__zoom { width: 100%; margin: 0 0 10px; accent-color: var(--cor-marca); }
+.recorte__controles .linha-acoes { margin-top: 0; }
+.recorte__pe { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--cor-borda); }
+.recorte__pe .bt { width: 100%; justify-content: center; }

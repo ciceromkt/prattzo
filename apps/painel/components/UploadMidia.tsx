@@ -5,7 +5,13 @@ import type { MediaItem } from "@prattzo/core";
 import {
   MAX_PHOTO_BYTES, MAX_VIDEO_BYTES, MAX_VIDEO_SECONDS, validatePhoto, validateVideo,
 } from "@prattzo/core";
-import { excluirMidia, moverMidia, registrarMidia } from "@/lib/actions";
+import { excluirMidia, moverMidia, registrarMidia, substituirMidia } from "@/lib/actions";
+import { RecorteFoto } from "./RecorteFoto";
+
+/** O que está aberto na tela de recorte: foto nova ou foto que já está no ar. */
+type EmRecorte =
+  | { modo: "nova"; src: string; arquivo: File }
+  | { modo: "trocar"; src: string; midiaId: string };
 
 /**
  * Envia direto do navegador para o Storage, por URL assinada: o arquivo não
@@ -15,9 +21,31 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
   const [erro, setErro] = useState<string | null>(null);
   const [avisos, setAvisos] = useState<string[]>([]);
   const [enviando, setEnviando] = useState(false);
+  const [recorte, setRecorte] = useState<EmRecorte | null>(null);
   const input = useRef<HTMLInputElement | null>(null);
 
-  async function enviar(file: File) {
+  /** Sobe um arquivo para o Storage e devolve a URL pública. */
+  async function subir(corpo: Blob, tipo: "foto" | "video", contentType: string): Promise<string> {
+    const r = await fetch("/api/upload", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ dishId, tipo, contentType }),
+    });
+    const { uploadUrl, token, publicUrl } = (await r.json()) as {
+      uploadUrl?: string; token?: string; publicUrl?: string; erro?: string;
+    };
+    if (!uploadUrl || !publicUrl) throw new Error("upload não autorizado");
+
+    const envio = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "content-type": contentType, ...(token ? { authorization: `Bearer ${token}` } : {}) },
+      body: corpo,
+    });
+    if (!envio.ok) throw new Error("falha no envio");
+    return publicUrl;
+  }
+
+  async function escolher(file: File) {
     setErro(null);
     setAvisos([]);
     const ehVideo = file.type.startsWith("video/");
@@ -36,34 +64,40 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
     }
     setAvisos(check.warnings);
 
+    // Foto passa pelo enquadramento antes de subir; vídeo vai direto, porque
+    // cortar vídeo no navegador do dono é outra conversa.
+    if (ehVideo) return enviarVideo(file, medidas.durationSeconds ?? null);
+    setRecorte({ modo: "nova", src: URL.createObjectURL(file), arquivo: file });
+  }
+
+  async function enviarVideo(file: File, duracaoS: number | null) {
     setEnviando(true);
     try {
-      const r = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ dishId, tipo: ehVideo ? "video" : "foto", contentType: file.type }),
-      });
-      const { uploadUrl, token, path, publicUrl } = (await r.json()) as {
-        uploadUrl?: string; token?: string; path?: string; publicUrl?: string; erro?: string;
-      };
-      if (!uploadUrl || !publicUrl) throw new Error("upload não autorizado");
-
-      const envio = await fetch(uploadUrl, {
-        method: "PUT",
-        headers: { "content-type": file.type, ...(token ? { authorization: `Bearer ${token}` } : {}) },
-        body: file,
-      });
-      if (!envio.ok) throw new Error("falha no envio");
-
-      await registrarMidia({
-        dishId,
-        tipo: ehVideo ? "video" : "foto",
-        url: publicUrl,
-        posterUrl: ehVideo ? publicUrl : null,
-        duracaoS: medidas.durationSeconds ?? null,
-      });
+      const publicUrl = await subir(file, "video", file.type);
+      await registrarMidia({ dishId, tipo: "video", url: publicUrl, posterUrl: publicUrl, duracaoS });
       if (input.current) input.current.value = "";
-      void path;
+    } catch {
+      setErro("Não deu para enviar. Confira a conexão e tente de novo.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  /** Volta do recorte com a foto já no enquadramento escolhido. */
+  async function receberRecorte(blob: Blob) {
+    const alvo = recorte;
+    setRecorte(null);
+    if (alvo?.modo === "nova") URL.revokeObjectURL(alvo.src);
+    if (!alvo) return;
+
+    setEnviando(true);
+    try {
+      const publicUrl = await subir(blob, "foto", "image/jpeg");
+      const feito = alvo.modo === "nova"
+        ? await registrarMidia({ dishId, tipo: "foto", url: publicUrl, posterUrl: null, duracaoS: null })
+        : await substituirMidia({ id: alvo.midiaId, url: publicUrl });
+      if (!feito.ok) throw new Error("não gravou");
+      if (input.current) input.current.value = "";
     } catch {
       setErro("Não deu para enviar. Confira a conexão e tente de novo.");
     } finally {
@@ -86,6 +120,19 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
               <img src={m.tipo === "video" ? m.poster_url ?? m.url : m.url} alt="" />
               {m.tipo === "video" ? <span className="midia-item__selo">vídeo</span> : null}
               <span className="midia-item__acoes">
+                {/* Reenquadrar o que já está no ar: as fotos antigas entraram
+                    com o corte automático, e recadastrar jogaria a capa do
+                    prato para o fim da fila. */}
+                {m.tipo === "foto" ? (
+                  <button
+                    type="button"
+                    className="bt bt--mini"
+                    onClick={() => setRecorte({ modo: "trocar", src: m.url, midiaId: m.id })}
+                    aria-label="Reenquadrar esta foto"
+                  >
+                    ⤢
+                  </button>
+                ) : null}
                 {(["cima", "baixo"] as const).map((dir) => (
                   <form action={moverMidia} key={dir}>
                     <input type="hidden" name="id" value={m.id} />
@@ -125,7 +172,7 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
         disabled={enviando}
         onChange={(e) => {
           const f = e.target.files?.[0];
-          if (f) void enviar(f);
+          if (f) void escolher(f);
         }}
       />
       <p className="contagem">
@@ -137,6 +184,20 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
       {avisos.map((a) => (
         <p className="contagem contagem--curta" key={a}>{a}</p>
       ))}
+
+      {recorte ? (
+        <RecorteFoto
+          src={recorte.src}
+          remoto={recorte.modo === "trocar"}
+          titulo={recorte.modo === "trocar" ? "Reenquadrar foto" : "Enquadrar foto"}
+          onPronto={(blob) => void receberRecorte(blob)}
+          onCancelar={() => {
+            if (recorte.modo === "nova") URL.revokeObjectURL(recorte.src);
+            setRecorte(null);
+            if (input.current) input.current.value = "";
+          }}
+        />
+      ) : null}
     </div>
   );
 }
