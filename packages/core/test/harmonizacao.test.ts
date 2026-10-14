@@ -65,6 +65,7 @@ describe("par exato do dono", () => {
 
   it("respeita a ordem que o dono deu aos pares", () => {
     const r = pedir(cardapio(), RISOTO, {
+      max: 2,
       paresPrato: [par(RISOTO, NEGRONI, "", 2), par(RISOTO, CHARDONNAY, "", 1)],
     });
     expect(r.map((h) => h.prato.id)).toEqual([CHARDONNAY, NEGRONI]);
@@ -182,5 +183,52 @@ describe("utilidades do painel", () => {
     const set = casadasCom([parCat(BEBIDA, COMIDA), parCat(BEBIDA, SOBREMESA)], BEBIDA);
     expect([...set].sort()).toEqual([COMIDA, SOBREMESA]);
     expect(casadasCom([parCat(BEBIDA, COMIDA)], SOBREMESA).size).toBe(0);
+  });
+});
+
+describe("quem escolhe: o modo da casa", () => {
+  it("curado: só o que o dono escreveu — prato sem par não sugere nada", () => {
+    const comPar = pedir(cardapio(), RISOTO, {
+      modo: "curado",
+      paresPrato: [par(RISOTO, CHARDONNAY, "o par da casa")],
+      paresCategoria: [parCat(BEBIDA, COMIDA)],
+    });
+    expect(comPar.map((h) => h.prato.id)).toEqual([CHARDONNAY]);
+
+    const semPar = pedir(cardapio(), DADINHO, {
+      modo: "curado",
+      paresPrato: [par(RISOTO, CHARDONNAY)],
+      paresCategoria: [parCat(BEBIDA, COMIDA)],
+    });
+    expect(semPar).toEqual([]);
+  });
+
+  it("automatico: só a regra de categoria — o par exato é ignorado", () => {
+    const r = pedir(cardapio(), RISOTO, {
+      modo: "automatico",
+      max: 2,
+      // O dono casou o risoto com o Negroni, mas pediu para o cardápio decidir:
+      // vem o destaque da categoria (Chardonnay), não o par escrito.
+      paresPrato: [par(RISOTO, NEGRONI, "ignorado neste modo")],
+      paresCategoria: [parCat(BEBIDA, COMIDA)],
+    });
+    expect(r.map((h) => h.prato.id)).toEqual([CHARDONNAY]);
+    expect(r[0]!.nota).toBe("");
+  });
+
+  it("misto é o padrão: par exato primeiro, categoria completando", () => {
+    const r = pedir(cardapio(), RISOTO, {
+      max: 2,
+      paresPrato: [par(RISOTO, CHARDONNAY, "o par certo")],
+      paresCategoria: [parCat(BEBIDA, COMIDA)],
+    });
+    expect(r.map((h) => h.prato.id)).toEqual([CHARDONNAY, NEGRONI]);
+  });
+
+  it("uma sugestão é o padrão", () => {
+    const r = pedir(cardapio(), RISOTO, {
+      paresPrato: [par(RISOTO, CHARDONNAY), par(RISOTO, NEGRONI, "", 1)],
+    });
+    expect(r).toHaveLength(1);
   });
 });

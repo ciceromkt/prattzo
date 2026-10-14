@@ -267,6 +267,10 @@ export function Cardapio({ menu }: { menu: PublicMenu }) {
           restaurantId={menu.restaurant.id}
           paresPrato={menu.paresPrato}
           paresCategoria={menu.paresCategoria}
+          harmonizacao={{
+            modo: menu.restaurant.harmonizacao_modo,
+            max: menu.restaurant.harmonizacao_max,
+          }}
           onAbrirPar={abrirHarmonizado}
           onQueroPar={(p) => {
             somar(p, 1);

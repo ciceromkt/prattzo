@@ -943,3 +943,20 @@ textarea.campo--curto { min-height: 92px; }
 .envio__trilho { display: block; height: 5px; border-radius: 99px; background: var(--cor-borda); overflow: hidden; }
 .envio__barra { display: block; height: 100%; background: var(--cor-marca); transition: width .2s ease; }
 .contagem--ok { color: var(--cor-marca); font-weight: 650; }
+
+/* ------------------------------------- modo da harmonização */
+.modo-lista { display: grid; gap: 9px; margin: 12px 0 18px; }
+.modo { display: flex; align-items: flex-start; gap: 11px; padding: 12px 13px;
+  border: 1.5px solid var(--cor-borda); border-radius: 10px; background: var(--cor-papel-alto);
+  cursor: pointer; transition: border-color .14s ease, background .14s ease; }
+.modo:hover { border-color: var(--cor-borda-forte); }
+.modo--on { border-color: var(--cor-marca); background: var(--cor-marca-fraca); }
+.modo input { margin-top: 3px; width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--cor-marca); }
+.modo__nome { display: block; font-size: .96rem; font-weight: 650; }
+.modo__txt { display: block; margin-top: 3px; font-size: .83rem; line-height: 1.45;
+  color: var(--cor-tinta-media, var(--cor-tinta-fraca)); }
+.modo-quantas__titulo { display: block; margin-bottom: 8px; }
+.modo-quantas { display: flex; gap: 8px; margin-bottom: 4px; }
+.modo-quantas .harmo-chip { display: inline-flex; align-items: center; }
+/* O rádio dentro do chip usa .visually-hidden, que já vem dos tokens. */
+.modo-quantas .harmo-chip:focus-within { outline: 2px solid var(--cor-marca); outline-offset: 2px; }

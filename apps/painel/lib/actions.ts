@@ -419,6 +419,31 @@ export async function salvarParesCategoria(_e: ActionState, fd: FormData): Promi
   };
 }
 
+/**
+ * Quem escolhe a harmonização, e quantas sugestões aparecem.
+ *
+ * É a única configuração do produto que muda o COMPORTAMENTO do cardápio, e
+ * não o conteúdo dele — por isso mora junto da harmonização e não em
+ * Configurações, onde viraria mais um campo que ninguém lê.
+ */
+export async function salvarModoHarmonizacao(_e: ActionState, fd: FormData): Promise<ActionState> {
+  const { client, restaurant } = await requireRestaurant();
+
+  const modo = texto(fd, "modo");
+  if (!["curado", "misto", "automatico"].includes(modo)) return { erro: "Modo inválido." };
+  const max = Number(texto(fd, "max")) === 2 ? 2 : 1;
+
+  const { error } = await client
+    .from("restaurants").update({ harmonizacao_modo: modo, harmonizacao_max: max })
+    .eq("id", restaurant.id);
+  if (error) {
+    reportError("falha_salvar_modo_harmonizacao", error);
+    return { erro: "Não deu para salvar." };
+  }
+  await atualiza(restaurant.slug);
+  return { ok: `Salvo. ${max === 1 ? "Uma sugestão" : "Duas sugestões"} por prato.` };
+}
+
 /** Par exato entre dois pratos, com a frase do dono. */
 export async function criarParPrato(_e: ActionState, fd: FormData): Promise<ActionState> {
   const { client, restaurant } = await requireRestaurant();

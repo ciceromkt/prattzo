@@ -61,6 +61,8 @@ export default async function PaginaHarmonizacao() {
         paresCategoria={dados.paresCategoria}
         paresPrato={paresPrato}
         opcoes={opcoes}
+        modo={dados.restaurant.harmonizacao_modo}
+        max={dados.restaurant.harmonizacao_max}
       />
     </Casca>
   );

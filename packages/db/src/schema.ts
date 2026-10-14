@@ -14,6 +14,8 @@ export interface RestaurantRow {
   horarios: unknown;
   fuso: string;
   link_google: string | null;
+  harmonizacao_modo: string | null;
+  harmonizacao_max: number | null;
   publicado: boolean;
   criado_em: string;
   atualizado_em: string;

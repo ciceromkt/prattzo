@@ -12,6 +12,10 @@
  * 2. REGRA DE CATEGORIA, do dono. Ele marcou "Drinks combina com Petiscos".
  *    Completa o que faltou, pegando o que ele destacou dentro da categoria.
  *
+ * Quanto de cada um entra é escolha da casa (`modo`): só o que ela escreveu,
+ * os dois, ou só a regra. Nenhum dos três inventa nada — a diferença é apenas
+ * quanto trabalho o dono quer ter.
+ *
  * Nos dois casos quem sabe é a casa: quem harmoniza um prato é quem o cozinhou.
  * Um modelo acertaria o clichê e erraria o cardápio — ofereceria o vinho que
  * não está na carta, ou o espumante com o dadinho de tapioca. E, pior, não
@@ -22,7 +26,7 @@
  * aos dois sentidos — o dono cadastra uma vez.
  */
 
-import type { Dish, MenuGroup, ParCategoria, ParPrato } from "./types";
+import type { Dish, MenuGroup, ModoHarmonizacao, ParCategoria, ParPrato } from "./types";
 import { estaEsgotado, temMidia } from "./menu";
 import { hasPrice } from "./price";
 
@@ -48,12 +52,15 @@ export interface EntradaHarmonizacao {
   paresCategoria: readonly ParCategoria[];
   /** O que já está no pedido: não se oferece o que a mesa já separou. */
   pedido?: Readonly<Record<string, number>>;
+  /** Quem escolhe. O dono decide isto no painel; o padrão é o dos dois. */
+  modo?: ModoHarmonizacao;
   max?: number;
   agora?: Date;
 }
 
 export function harmonizacoes({
-  grupos, prato, paresPrato, paresCategoria, pedido = {}, max = 3, agora = new Date(),
+  grupos, prato, paresPrato, paresCategoria, pedido = {},
+  modo = "misto", max = 1, agora = new Date(),
 }: EntradaHarmonizacao): Harmonizacao[] {
   const porId = new Map<string, { prato: Dish; categoria: string }>();
   for (const g of grupos) {
@@ -81,8 +88,10 @@ export function harmonizacoes({
     saida.push({ prato: p, motivo, nota });
   };
 
-  // 1. O que o dono casou prato a prato.
-  const explicitos = [...paresPrato].sort((x, y) => x.ordem - y.ordem || x.id.localeCompare(y.id));
+  // 1. O que o dono casou prato a prato. Em "automatico" ele abriu mão disto.
+  const explicitos = modo === "automatico"
+    ? []
+    : [...paresPrato].sort((x, y) => x.ordem - y.ordem || x.id.localeCompare(y.id));
   for (const par of explicitos) {
     const outroId = oOutro(par, prato.id);
     if (!outroId) continue;
@@ -95,7 +104,10 @@ export function harmonizacoes({
 
   // 2. As categorias que o dono casou, na ordem do cardápio. Dentro de cada
   //    uma, o que ele destacou vem na frente — o resto segue a ordem dele.
-  const minhaCat = prato.category_id;
+  //    Em "curado" esta parte não roda: a casa só oferece o que escreveu, e
+  //    prato sem par simplesmente não sugere nada. É a escolha de quem prefere
+  //    não dizer nada a dizer algo que o chef não assinaria.
+  const minhaCat = modo === "curado" ? null : prato.category_id;
   if (minhaCat) {
     const casadas = new Set<string>();
     for (const par of paresCategoria) {

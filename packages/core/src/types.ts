@@ -88,8 +88,19 @@ export interface Restaurant {
   /** Fuso IANA do salão, ex.: "America/Sao_Paulo". */
   fuso: string;
   link_google: string | null;
+  /** Quem escolhe o que harmoniza com o quê. Ver `harmonizacoes`. */
+  harmonizacao_modo: ModoHarmonizacao;
+  /** Quantas sugestões aparecem dentro do prato: 1 ou 2. */
+  harmonizacao_max: number;
   publicado: boolean;
 }
+
+/**
+ * - `curado`: só os pares que o dono escreveu, um a um. Sem par, sem sugestão.
+ * - `misto`: os pares do dono primeiro, e as categorias que ele casou completam.
+ * - `automatico`: só a regra de categoria — ele marca uma vez e não pensa mais.
+ */
+export type ModoHarmonizacao = "curado" | "misto" | "automatico";
 
 export interface MenuGroup {
   categoria: Category;

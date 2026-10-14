@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Dish, MenuGroup, ParCategoria, ParPrato } from "@prattzo/core";
+import type { Dish, MenuGroup, ModoHarmonizacao, ParCategoria, ParPrato } from "@prattzo/core";
 import {
   capaDoPrato, estaEsgotado, harmonizacoes, midiasDoPrato, priceLabel, VIDEO_SEGUNDOS_EXIBIDOS,
 } from "@prattzo/core";
@@ -30,6 +30,8 @@ interface Props {
   restaurantId: string;
   paresPrato: ParPrato[];
   paresCategoria: ParCategoria[];
+  /** Como a casa configurou a harmonização, no painel. */
+  harmonizacao: { modo: ModoHarmonizacao; max: number };
   onIdx: (i: number) => void;
   onFechar: () => void;
   onLista: (catId: string) => void;
@@ -43,7 +45,7 @@ interface Props {
 }
 
 export function Stories({
-  grupos, fila, idx, pedido, favoritos, restaurantId, paresPrato, paresCategoria,
+  grupos, fila, idx, pedido, favoritos, restaurantId, paresPrato, paresCategoria, harmonizacao,
   onIdx, onFechar, onLista, onCategoria, onQuero, onFavoritar, onCompartilhar,
   onAbrirPar, onQueroPar,
 }: Props) {
@@ -70,10 +72,13 @@ export function Stories({
   const categoria = grupos.find((g) => g.categoria.id === prato?.category_id)?.categoria;
 
   const pares = useMemo(
-    // Duas, não três: a faixa é horizontal e a terceira já entrava cortada na
-    // borda da tela. Oferta que o cliente não vê inteira não é oferta.
-    () => (prato ? harmonizacoes({ grupos, prato, paresPrato, paresCategoria, pedido, max: 2 }) : []),
-    [grupos, prato, paresPrato, paresCategoria, pedido],
+    () => (prato
+      ? harmonizacoes({
+          grupos, prato, paresPrato, paresCategoria, pedido,
+          modo: harmonizacao.modo, max: harmonizacao.max,
+        })
+      : []),
+    [grupos, prato, paresPrato, paresCategoria, pedido, harmonizacao.modo, harmonizacao.max],
   );
 
   /**

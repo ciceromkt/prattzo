@@ -14,7 +14,13 @@ function toRestaurant(r: RestaurantRow): Restaurant {
     logo_url: r.logo_url, logo_escuro: Boolean(r.logo_escuro),
     video_capa_url: r.video_capa_url, horario_texto: r.horario_texto,
     horarios: r.horarios ?? [], fuso: r.fuso,
-    link_google: r.link_google, publicado: r.publicado,
+    link_google: r.link_google,
+    // Coluna nova: banco que ainda não rodou a migração devolve nulo aqui, e a
+    // tela do cliente não pode quebrar por causa disso.
+    harmonizacao_modo: r.harmonizacao_modo === "curado" || r.harmonizacao_modo === "automatico"
+      ? r.harmonizacao_modo : "misto",
+    harmonizacao_max: r.harmonizacao_max === 2 ? 2 : 1,
+    publicado: r.publicado,
   };
 }
 

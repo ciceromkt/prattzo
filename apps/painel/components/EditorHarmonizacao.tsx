@@ -3,8 +3,10 @@
 import { useMemo, useState } from "react";
 import { useFormState } from "react-dom";
 import { casadasCom } from "@prattzo/core";
-import type { ParCategoria } from "@prattzo/core";
-import { criarParPrato, excluirParPrato, salvarParesCategoria, type ActionState } from "@/lib/actions";
+import type { ModoHarmonizacao, ParCategoria } from "@prattzo/core";
+import {
+  criarParPrato, excluirParPrato, salvarModoHarmonizacao, salvarParesCategoria, type ActionState,
+} from "@/lib/actions";
 import { BotaoEnviar } from "./BotaoEnviar";
 
 export interface CategoriaView {
@@ -39,18 +41,108 @@ export interface PratoOpcao {
  * decisões antes de mostrar resultado garante que ninguém termina.
  */
 export function EditorHarmonizacao({
-  categorias, paresCategoria, paresPrato, opcoes,
+  categorias, paresCategoria, paresPrato, opcoes, modo, max,
 }: {
   categorias: CategoriaView[];
   paresCategoria: ParCategoria[];
   paresPrato: ParPratoView[];
   opcoes: PratoOpcao[];
+  modo: ModoHarmonizacao;
+  max: number;
 }) {
   return (
     <>
+      <Comando modo={modo} max={max} />
       <QuadroCategorias categorias={categorias} pares={paresCategoria} />
       <ParesExatos pares={paresPrato} opcoes={opcoes} />
     </>
+  );
+}
+
+const MODOS: Array<{ id: ModoHarmonizacao; nome: string; texto: string }> = [
+  {
+    id: "curado",
+    nome: "Só o que eu escolher",
+    texto: "O cardápio mostra apenas os pares que você escreveu aqui embaixo. Prato sem par não "
+      + "sugere nada. É a casa que prefere não dizer nada a dizer algo que o chef não assinaria.",
+  },
+  {
+    id: "misto",
+    nome: "Eu escolho, o cardápio completa",
+    texto: "Seus pares vêm na frente. Onde não houver par, o cardápio usa as combinações de "
+      + "categoria que você marcou abaixo. É o caminho de quem quer cuidar dos carros-chefes "
+      + "e deixar o resto resolvido.",
+  },
+  {
+    id: "automatico",
+    nome: "Deixa o cardápio escolher",
+    texto: "Só as combinações de categoria. Você marca uma vez quais categorias vão bem juntas e "
+      + "não pensa mais nisso — nem os pares exatos são usados.",
+  },
+];
+
+/**
+ * A única configuração que muda o COMPORTAMENTO do cardápio.
+ *
+ * Os três modos não mudam de onde vem a sugestão — ela é sempre sua, escrita
+ * aqui. O que muda é quanto trabalho você quer ter.
+ */
+function Comando({ modo, max }: { modo: ModoHarmonizacao; max: number }) {
+  const [estado, acao] = useFormState<ActionState, FormData>(salvarModoHarmonizacao, {});
+  const [escolhido, setEscolhido] = useState<ModoHarmonizacao>(modo);
+  const [quantas, setQuantas] = useState(max);
+
+  return (
+    <form action={acao} className="bloco">
+      <h3>Como o cardápio sugere</h3>
+
+      <div className="modo-lista">
+        {MODOS.map((m) => (
+          <label className={`modo${escolhido === m.id ? " modo--on" : ""}`} key={m.id}>
+            <input
+              type="radio"
+              name="modo"
+              value={m.id}
+              checked={escolhido === m.id}
+              onChange={() => setEscolhido(m.id)}
+            />
+            <span>
+              <span className="modo__nome">{m.nome}</span>
+              <span className="modo__txt">{m.texto}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+
+      <p className="campo-rotulo modo-quantas__titulo">Quantas sugestões por prato</p>
+      <div className="modo-quantas">
+        {[1, 2].map((n) => (
+          <label className={`harmo-chip${quantas === n ? " harmo-chip--on" : ""}`} key={n}>
+            <input
+              type="radio"
+              name="max"
+              value={n}
+              checked={quantas === n}
+              onChange={() => setQuantas(n)}
+              className="visually-hidden"
+            />
+            {n === 1 ? "Uma" : "Duas"}
+          </label>
+        ))}
+      </div>
+      <p className="contagem">
+        Uma é o padrão, e é o que recomendo: uma sugestão lê como conselho da casa, duas leem como
+        vitrine — e o segundo cartão empurra o “Quero esse” para baixo. Mas quem conhece o salão é
+        você, e em Resultados dá para ver quantas sugestões foram vistas e quantas viraram pedido.
+      </p>
+
+      {estado.erro ? <p className="contagem contagem--curta">{estado.erro}</p> : null}
+      {estado.ok ? <p className="contagem contagem--ok">{estado.ok}</p> : null}
+
+      <div className="linha-acoes">
+        <BotaoEnviar className="bt bt--ouro">Salvar</BotaoEnviar>
+      </div>
+    </form>
   );
 }
 
