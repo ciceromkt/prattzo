@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Dish, MenuGroup, ParCategoria, ParPrato } from "@prattzo/core";
 import {
-  capaDoPrato, estaEsgotado, harmonizacoes, midiasDoPrato, priceLabel,
+  capaDoPrato, estaEsgotado, harmonizacoes, midiasDoPrato, priceLabel, VIDEO_SEGUNDOS_EXIBIDOS,
 } from "@prattzo/core";
 import { DUR_SEM_VIDEO } from "@prattzo/ui";
 import { Regua } from "./Regua";
@@ -70,7 +70,9 @@ export function Stories({
   const categoria = grupos.find((g) => g.categoria.id === prato?.category_id)?.categoria;
 
   const pares = useMemo(
-    () => (prato ? harmonizacoes({ grupos, prato, paresPrato, paresCategoria, pedido, max: 3 }) : []),
+    // Duas, não três: a faixa é horizontal e a terceira já entrava cortada na
+    // borda da tela. Oferta que o cliente não vê inteira não é oferta.
+    () => (prato ? harmonizacoes({ grupos, prato, paresPrato, paresCategoria, pedido, max: 2 }) : []),
     [grupos, prato, paresPrato, paresCategoria, pedido],
   );
 
@@ -173,7 +175,11 @@ export function Stories({
   };
 
   if (!prato) return null;
-  const dur = videoVivo && atual ? atual.duracao_s ?? DUR_SEM_VIDEO : DUR_SEM_VIDEO;
+  // A barra acompanha o que vai TOCAR, não o tamanho do arquivo: num vídeo de
+  // 40s ela andaria devagarinho e pararia no meio, parecendo travada.
+  const dur = videoVivo && atual
+    ? Math.min(atual.duracao_s ?? DUR_SEM_VIDEO, VIDEO_SEGUNDOS_EXIBIDOS)
+    : DUR_SEM_VIDEO;
   const temDesc = prato.descricao.length > 0;
   const temDetalhe = prato.ingredientes.length > 0 || prato.serve.length > 0 || prato.descricao.length > 92;
   const primeiro = idx === 0 && iMidia === 0 && fila.length > 1;
@@ -194,6 +200,12 @@ export function Stories({
               autoPlay
               preload="auto"
               onEnded={() => avancar(1)}
+              /* O dono pode enviar um vídeo mais longo — o cardápio mostra o
+                 começo e passa adiante. Passados ~15s o cliente já decidiu, e
+                 prender a tela depois disso custa o resto do cardápio. */
+              onTimeUpdate={(e) => {
+                if (e.currentTarget.currentTime >= VIDEO_SEGUNDOS_EXIBIDOS) avancar(1);
+              }}
               aria-label={`Vídeo: ${prato.nome}`}
             />
             {/* Depois do vídeo no documento, para pintar por cima dele: o botão

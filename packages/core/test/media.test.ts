@@ -1,0 +1,66 @@
+import { describe, expect, it } from "vitest";
+import {
+  MAX_VIDEO_BYTES, VIDEO_SEGUNDOS_EXIBIDOS, validatePhoto, validateVideo,
+} from "../src/media";
+
+const video = (over: Partial<Parameters<typeof validateVideo>[0]> = {}) => ({
+  type: "video/mp4", size: 8 * 1024 * 1024, durationSeconds: 10, width: 1080, height: 1920, ...over,
+});
+
+describe("duração do vídeo", () => {
+  it("vídeo maior que a exibição passa, com aviso — não é erro do dono", () => {
+    // O caso real: 15.7s baixado do Instagram, recusado por sete décimos.
+    const r = validateVideo(video({ durationSeconds: 15.7 }), { exibidoAte: VIDEO_SEGUNDOS_EXIBIDOS });
+    expect(r.ok).toBe(true);
+    expect(r.errors).toEqual([]);
+    expect(r.warnings.join(" ")).toContain("primeiros 15s");
+  });
+
+  it("o aviso diz que o fim não aparece, para o dono cortar o começo se precisar", () => {
+    const r = validateVideo(video({ durationSeconds: 40 }), { exibidoAte: VIDEO_SEGUNDOS_EXIBIDOS });
+    expect(r.ok).toBe(true);
+    expect(r.warnings.join(" ")).toContain("corte o começo");
+  });
+
+  it("vídeo dentro da exibição não avisa nada", () => {
+    const r = validateVideo(video({ durationSeconds: 12 }), { exibidoAte: VIDEO_SEGUNDOS_EXIBIDOS });
+    expect(r.warnings).toEqual([]);
+  });
+
+  it("meio segundo a mais não vira aviso: a duração do arquivo tem arredondamento", () => {
+    const r = validateVideo(video({ durationSeconds: 15.4 }), { exibidoAte: VIDEO_SEGUNDOS_EXIBIDOS });
+    expect(r.warnings).toEqual([]);
+  });
+
+  it("acima de um minuto é recusado: não é vídeo de prato", () => {
+    const r = validateVideo(video({ durationSeconds: 95 }), { exibidoAte: VIDEO_SEGUNDOS_EXIBIDOS });
+    expect(r.ok).toBe(false);
+    expect(r.errors.join(" ")).toContain("envie um trecho");
+  });
+
+  it("o vídeo de ambiente da capa não ganha aviso de corte: ele roda em laço", () => {
+    const r = validateVideo(video({ durationSeconds: 30 }));
+    expect(r.ok).toBe(true);
+    expect(r.warnings).toEqual([]);
+  });
+});
+
+describe("o que continua sendo recusado", () => {
+  it("arquivo pesado demais", () => {
+    const r = validateVideo(video({ size: MAX_VIDEO_BYTES + 1 }));
+    expect(r.ok).toBe(false);
+  });
+
+  it("formato que o navegador do cliente não toca", () => {
+    expect(validateVideo(video({ type: "video/avi" })).ok).toBe(false);
+    expect(validatePhoto({ type: "image/gif", size: 1000 }).ok).toBe(false);
+  });
+});
+
+describe("avisos que não barram o envio", () => {
+  it("vídeo deitado avisa, mas sobe", () => {
+    const r = validateVideo(video({ width: 1920, height: 1080 }));
+    expect(r.ok).toBe(true);
+    expect(r.warnings.join(" ")).toContain("vertical");
+  });
+});

@@ -936,3 +936,10 @@ textarea.campo--curto { min-height: 92px; }
 .recorte__controles .linha-acoes { margin-top: 0; }
 .recorte__pe { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--cor-borda); }
 .recorte__pe .bt { width: 100%; justify-content: center; }
+
+/* ------------------------------------------------------ envio em curso */
+.envio { margin: 8px 0 2px; }
+.envio .contagem { margin: 0 0 6px; }
+.envio__trilho { display: block; height: 5px; border-radius: 99px; background: var(--cor-borda); overflow: hidden; }
+.envio__barra { display: block; height: 100%; background: var(--cor-marca); transition: width .2s ease; }
+.contagem--ok { color: var(--cor-marca); font-weight: 650; }

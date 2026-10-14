@@ -1,4 +1,16 @@
-export const MAX_VIDEO_SECONDS = 15;
+/**
+ * Quanto de cada vídeo o cardápio mostra ao cliente.
+ *
+ * Não é limite de arquivo, é limite de atenção: passados uns 15 segundos o
+ * cliente já passou para o próximo prato. Vídeo maior é aceito e tocado até
+ * aqui — o que o dono precisa saber, e a tela diz no envio, é que o fim não vai
+ * aparecer. Recusar o arquivo por causa de meio segundo, como acontecia antes,
+ * é devolver trabalho para quem baixou o vídeo do Instagram e não tem editor.
+ */
+export const VIDEO_SEGUNDOS_EXIBIDOS = 15;
+
+/** Acima disto o arquivo é recusado: não é vídeo de prato, é outra coisa. */
+export const MAX_VIDEO_SECONDS = 60;
 export const MAX_VIDEO_BYTES = 20 * 1024 * 1024;
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 export const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm"] as const;
@@ -33,7 +45,17 @@ export interface MediaValidation {
   warnings: string[];
 }
 
-export function validateVideo(input: MediaValidationInput): MediaValidation {
+export function validateVideo(
+  input: MediaValidationInput,
+  opcoes: {
+    /**
+     * Quanto deste vídeo vai ao ar. Acima disso o envio passa, com aviso.
+     * O vídeo de ambiente da capa não manda nada aqui: ele roda em laço, então
+     * não existe "pedaço cortado" para avisar.
+     */
+    exibidoAte?: number;
+  } = {},
+): MediaValidation {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -44,12 +66,22 @@ export function validateVideo(input: MediaValidationInput): MediaValidation {
     errors.push(`Vídeo acima de ${Math.round(MAX_VIDEO_BYTES / 1024 / 1024)} MB. Comprima antes de enviar.`);
   }
   if (input.durationSeconds !== undefined && input.durationSeconds > MAX_VIDEO_SECONDS + 0.5) {
-    // Diz quanto cortar: "o limite é 15s" sozinho deixa a conta para o dono,
-    // que está com o vídeo aberto no celular e quer saber onde parar.
-    const sobra = input.durationSeconds - MAX_VIDEO_SECONDS;
     errors.push(
-      `Vídeo com ${input.durationSeconds.toFixed(1)}s. O limite é ${MAX_VIDEO_SECONDS}s — `
-      + `corte ${sobra.toFixed(1)}s e envie de novo.`,
+      `Vídeo com ${Math.round(input.durationSeconds)}s. Acima de ${MAX_VIDEO_SECONDS}s não é vídeo de prato — `
+      + "envie um trecho.",
+    );
+  } else if (
+    opcoes.exibidoAte !== undefined
+    && input.durationSeconds !== undefined
+    && input.durationSeconds > opcoes.exibidoAte + 0.5
+  ) {
+    // Aviso, não erro: o arquivo sobe inteiro e o cardápio toca o começo. O que
+    // o dono precisa saber é que o fim não vai aparecer — se o melhor pedaço
+    // estiver lá, ele corta antes de enviar.
+    warnings.push(
+      `Vídeo com ${Math.round(input.durationSeconds)}s: o cardápio mostra os primeiros `
+      + `${opcoes.exibidoAte}s e passa para o próximo prato. Se o melhor pedaço estiver no fim, `
+      + "corte o começo antes de enviar.",
     );
   }
   if (input.width && input.height) {

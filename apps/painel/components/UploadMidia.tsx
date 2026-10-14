@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import type { MediaItem } from "@prattzo/core";
 import {
-  MAX_PHOTO_BYTES, MAX_VIDEO_BYTES, MAX_VIDEO_SECONDS, validatePhoto, validateVideo,
+  MAX_PHOTO_BYTES, MAX_VIDEO_BYTES, VIDEO_SEGUNDOS_EXIBIDOS, validatePhoto, validateVideo,
 } from "@prattzo/core";
 import { excluirMidia, moverMidia, registrarMidia, substituirMidia } from "@/lib/actions";
 import { RecorteFoto } from "./RecorteFoto";
@@ -20,40 +20,59 @@ type EmRecorte =
 export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaItem[] }) {
   const [erro, setErro] = useState<string | null>(null);
   const [avisos, setAvisos] = useState<string[]>([]);
-  const [enviando, setEnviando] = useState(false);
+  const [enviando, setEnviando] = useState<null | "foto" | "video">(null);
+  const [progresso, setProgresso] = useState(0);
+  const [feito, setFeito] = useState<string | null>(null);
   const [recorte, setRecorte] = useState<EmRecorte | null>(null);
   const input = useRef<HTMLInputElement | null>(null);
 
-  /** Sobe um arquivo para o Storage e devolve a URL pública. */
-  async function subir(corpo: Blob, tipo: "foto" | "video", contentType: string): Promise<string> {
-    const r = await fetch("/api/upload", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ dishId, tipo, contentType }),
-    });
-    const { uploadUrl, token, publicUrl } = (await r.json()) as {
-      uploadUrl?: string; token?: string; publicUrl?: string; erro?: string;
-    };
-    if (!uploadUrl || !publicUrl) throw new Error("upload não autorizado");
+  /**
+   * Sobe um arquivo para o Storage e devolve a URL pública.
+   *
+   * Vai por XMLHttpRequest, e não por fetch, só por causa de uma coisa: ele
+   * avisa quanto já subiu. Um vídeo de 18 MB no wi-fi do salão leva perto de um
+   * minuto, e sem o número na tela o dono acha que não funcionou e tenta de
+   * novo no meio do caminho — foi exatamente o que aconteceu.
+   */
+  function subir(corpo: Blob, tipo: "foto" | "video", contentType: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      void (async () => {
+        const r = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ dishId, tipo, contentType }),
+        });
+        const { uploadUrl, token, publicUrl } = (await r.json()) as {
+          uploadUrl?: string; token?: string; publicUrl?: string; erro?: string;
+        };
+        if (!uploadUrl || !publicUrl) return reject(new Error("upload não autorizado"));
 
-    const envio = await fetch(uploadUrl, {
-      method: "PUT",
-      headers: { "content-type": contentType, ...(token ? { authorization: `Bearer ${token}` } : {}) },
-      body: corpo,
+        const req = new XMLHttpRequest();
+        req.open("PUT", uploadUrl);
+        req.setRequestHeader("content-type", contentType);
+        if (token) req.setRequestHeader("authorization", `Bearer ${token}`);
+        req.upload.onprogress = (e) => {
+          if (e.lengthComputable) setProgresso(Math.round((e.loaded / e.total) * 100));
+        };
+        req.onload = () => (req.status >= 200 && req.status < 300
+          ? resolve(publicUrl)
+          : reject(new Error(`falha no envio (${req.status})`)));
+        req.onerror = () => reject(new Error("falha de rede"));
+        req.send(corpo);
+      })().catch(reject);
     });
-    if (!envio.ok) throw new Error("falha no envio");
-    return publicUrl;
   }
 
   async function escolher(file: File) {
     setErro(null);
     setAvisos([]);
+    setFeito(null);
     const ehVideo = file.type.startsWith("video/");
 
     const medidas: { durationSeconds?: number; width?: number; height?: number } =
       ehVideo ? await medirVideo(file) : await medirImagem(file);
     const check = ehVideo
-      ? validateVideo({ type: file.type, size: file.size, ...medidas })
+      ? validateVideo({ type: file.type, size: file.size, ...medidas }, { exibidoAte: VIDEO_SEGUNDOS_EXIBIDOS })
       : validatePhoto({ type: file.type, size: file.size, ...medidas });
 
     if (!check.ok) {
@@ -71,15 +90,20 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
   }
 
   async function enviarVideo(file: File, duracaoS: number | null) {
-    setEnviando(true);
+    setEnviando("video");
+    setProgresso(0);
     try {
       const publicUrl = await subir(file, "video", file.type);
-      await registrarMidia({ dishId, tipo: "video", url: publicUrl, posterUrl: publicUrl, duracaoS });
+      const ok = await registrarMidia({
+        dishId, tipo: "video", url: publicUrl, posterUrl: publicUrl, duracaoS,
+      });
+      if (!ok.ok) throw new Error("não gravou");
       if (input.current) input.current.value = "";
+      setFeito("Vídeo no cardápio.");
     } catch {
       setErro("Não deu para enviar. Confira a conexão e tente de novo.");
     } finally {
-      setEnviando(false);
+      setEnviando(null);
     }
   }
 
@@ -90,18 +114,20 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
     if (alvo?.modo === "nova") URL.revokeObjectURL(alvo.src);
     if (!alvo) return;
 
-    setEnviando(true);
+    setEnviando("foto");
+    setProgresso(0);
     try {
       const publicUrl = await subir(blob, "foto", "image/jpeg");
-      const feito = alvo.modo === "nova"
+      const ok = alvo.modo === "nova"
         ? await registrarMidia({ dishId, tipo: "foto", url: publicUrl, posterUrl: null, duracaoS: null })
         : await substituirMidia({ id: alvo.midiaId, url: publicUrl });
-      if (!feito.ok) throw new Error("não gravou");
+      if (!ok.ok) throw new Error("não gravou");
       if (input.current) input.current.value = "";
+      setFeito(alvo.modo === "nova" ? "Foto no cardápio." : "Foto reenquadrada.");
     } catch {
       setErro("Não deu para enviar. Confira a conexão e tente de novo.");
     } finally {
-      setEnviando(false);
+      setEnviando(null);
     }
   }
 
@@ -169,17 +195,30 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
         className="campo"
         type="file"
         accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
-        disabled={enviando}
+        disabled={Boolean(enviando)}
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) void escolher(f);
         }}
       />
       <p className="contagem">
-        Vídeo vertical de até {MAX_VIDEO_SECONDS}s e {Math.round(MAX_VIDEO_BYTES / 1024 / 1024)} MB.
-        Foto de até {Math.round(MAX_PHOTO_BYTES / 1024 / 1024)} MB.
+        Vídeo vertical até {Math.round(MAX_VIDEO_BYTES / 1024 / 1024)} MB — o cardápio mostra os
+        primeiros {VIDEO_SEGUNDOS_EXIBIDOS}s. Foto de até {Math.round(MAX_PHOTO_BYTES / 1024 / 1024)} MB,
+        e você escolhe o enquadramento antes de subir.
       </p>
-      {enviando ? <p className="contagem">Enviando…</p> : null}
+
+      {/* O vídeo do salão leva perto de um minuto no wi-fi de lá. Sem a barra o
+          dono achava que não tinha funcionado e tentava de novo no meio. */}
+      {enviando ? (
+        <div className="envio" role="status">
+          <p className="contagem">
+            Enviando {enviando === "video" ? "o vídeo" : "a foto"}… {progresso}%
+            {progresso >= 100 ? " — gravando no cardápio" : null}
+          </p>
+          <span className="envio__trilho"><span className="envio__barra" style={{ width: `${progresso}%` }} /></span>
+        </div>
+      ) : null}
+      {feito && !enviando ? <p className="contagem contagem--ok">✓ {feito}</p> : null}
       {erro ? <p className="contagem contagem--curta">{erro}</p> : null}
       {avisos.map((a) => (
         <p className="contagem contagem--curta" key={a}>{a}</p>
