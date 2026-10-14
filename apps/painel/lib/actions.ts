@@ -225,6 +225,45 @@ export async function moverCategoria(fd: FormData): Promise<void> {
   await atualiza(restaurant.slug);
 }
 
+/**
+ * Grava a capa que o dono acabou de enquadrar.
+ *
+ * Separada de `definirCapaCategoria` porque aqui a imagem é um arquivo NOVO,
+ * recortado no formato da grade — e não uma das fotos que já estavam no
+ * cardápio. A anterior, se também era uma capa enquadrada, sai do Storage: não
+ * sobra lixo de cada tentativa de enquadramento.
+ */
+export async function salvarCapaCategoria(
+  input: { id: string; capaUrl: string },
+): Promise<{ ok: boolean }> {
+  const { client, restaurant } = await requireRestaurant();
+
+  const { data: antiga } = await client
+    .from("menu_categories").select("capa_url").eq("id", input.id)
+    .eq("restaurant_id", restaurant.id).maybeSingle<{ capa_url: string | null }>();
+
+  const { error } = await client
+    .from("menu_categories").update({ capa_url: input.capaUrl })
+    .eq("id", input.id).eq("restaurant_id", restaurant.id);
+  if (error) {
+    reportError("falha_salvar_capa_categoria", error);
+    return { ok: false };
+  }
+
+  // Só apaga o que era capa enquadrada (mora em /casa/): foto de prato usada
+  // como capa continua sendo a foto do prato, e apagá-la sumiria com ela do
+  // cardápio inteiro.
+  const anterior = antiga?.capa_url ?? "";
+  const caminho = anterior.split("/object/public/midia/")[1];
+  if (caminho && caminho.includes("/casa/categoria-") && anterior !== input.capaUrl) {
+    const { error: eRemover } = await client.storage.from("midia").remove([decodeURIComponent(caminho)]);
+    if (eRemover) reportError("falha_remover_capa_antiga", eRemover, { caminho });
+  }
+
+  await atualiza(restaurant.slug);
+  return { ok: true };
+}
+
 export async function definirCapaCategoria(fd: FormData): Promise<void> {
   const { client, restaurant } = await requireRestaurant();
   await client.from("menu_categories")

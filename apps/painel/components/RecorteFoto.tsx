@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RECORTE_ALTURA, RECORTE_LARGURA } from "@prattzo/core";
 
+
 /**
  * O dono escolhe o enquadramento da foto, em vez de o cardápio escolher por ele.
  *
@@ -25,12 +26,19 @@ import { RECORTE_ALTURA, RECORTE_LARGURA } from "@prattzo/core";
  * guardar coordenadas para a tela do cliente ter que aplicar depois.
  */
 export function RecorteFoto({
-  src, remoto = false, titulo = "Enquadrar foto", onPronto, onCancelar,
+  src, remoto = false, titulo = "Enquadrar foto", dica,
+  larguraAlvo = RECORTE_LARGURA, alturaAlvo = RECORTE_ALTURA,
+  onPronto, onCancelar,
 }: {
   src: string;
   /** Foto que já está no Storage: precisa de crossOrigin para entrar no canvas. */
   remoto?: boolean;
   titulo?: string;
+  /** A frase sob o quadro. Muda com o lugar: tela do prato ou grade da home. */
+  dica?: string;
+  /** Formato do recorte. O prato é 9:16; a capa da categoria, 3:2. */
+  larguraAlvo?: number;
+  alturaAlvo?: number;
   onPronto: (blob: Blob) => void;
   onCancelar: () => void;
 }) {
@@ -116,8 +124,8 @@ export function RecorteFoto({
     try {
       // Nunca aumenta a foto: se o pedaço visível for menor que 1080, sai menor.
       const visivelW = quadro.w / escala;
-      const largura = Math.max(320, Math.min(RECORTE_LARGURA, Math.round(visivelW)));
-      const altura = Math.round((largura * RECORTE_ALTURA) / RECORTE_LARGURA);
+      const largura = Math.max(320, Math.min(larguraAlvo, Math.round(visivelW)));
+      const altura = Math.round((largura * alturaAlvo) / larguraAlvo);
 
       const cv = document.createElement("canvas");
       cv.width = largura;
@@ -190,6 +198,7 @@ export function RecorteFoto({
 
         <div
           className="recorte__quadro"
+          style={{ aspectRatio: `${larguraAlvo} / ${alturaAlvo}` }}
           ref={caixa}
           onPointerDown={(e) => {
             arrasto.current = { px: e.clientX, py: e.clientY };
@@ -216,7 +225,8 @@ export function RecorteFoto({
         </div>
 
         <p className="contagem recorte__dica">
-          É assim que o cliente vê, na tela inteira do celular. Arraste a foto para escolher o pedaço.
+          {dica ?? "É assim que o cliente vê, na tela inteira do celular."} Arraste a foto para
+          escolher o pedaço.
         </p>
 
         <div className="recorte__controles">

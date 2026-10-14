@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       dishId?: string;
       tipo?: "foto" | "video";
       contentType?: string;
-      alvo?: "capa" | "logo";
+      alvo?: "capa" | "logo" | "categoria";
     };
 
     if (!contentType || !EXT[contentType]) {
@@ -41,14 +41,15 @@ export async function POST(req: Request) {
 
     let path: string;
 
-    if (alvo === "capa" || alvo === "logo") {
-      // Logo é imagem; capa é vídeo. Trocar um pelo outro quebraria a tela.
+    if (alvo === "capa" || alvo === "logo" || alvo === "categoria") {
+      // Logo e capa de categoria são imagem; a capa da casa é vídeo. Trocar um
+      // pelo outro quebraria a tela.
       const ehVideo = contentType.startsWith("video/");
       if (alvo === "capa" && !ehVideo) {
         return NextResponse.json({ erro: "A capa é um vídeo." }, { status: 400 });
       }
-      if (alvo === "logo" && ehVideo) {
-        return NextResponse.json({ erro: "O logo é uma imagem." }, { status: 400 });
+      if (alvo !== "capa" && ehVideo) {
+        return NextResponse.json({ erro: "Esta capa é uma imagem." }, { status: 400 });
       }
       path = brandingPath(restaurant.id, alvo, EXT[contentType]!);
     } else {

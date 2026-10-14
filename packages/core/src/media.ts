@@ -31,6 +31,16 @@ export const ASPECT_TOLERANCE = 0.25;
 export const RECORTE_LARGURA = 1080;
 export const RECORTE_ALTURA = 1920;
 
+/**
+ * A capa da categoria é deitada (3:2), e não em pé como a foto do prato.
+ *
+ * Por isso ela precisa do seu próprio recorte: a mesma foto que fica certa na
+ * tela do prato entra na grade da home como uma faixa fina do meio dela — foi
+ * o que aconteceu com o quadro do vídeo do torresmo, que virou uma tira.
+ */
+export const CAPA_LARGURA = 1200;
+export const CAPA_ALTURA = 800;
+
 export interface MediaValidationInput {
   type: string;
   size: number;
@@ -123,8 +133,8 @@ export function mediaPath(restaurantId: string, dishId: string, kind: "foto" | "
   return `${restaurantId}/${dishId}/${kind}-${Date.now()}.${safeExt}`;
 }
 
-/** Mídia do restaurante, não de um prato: vídeo de capa e logo. */
-export function brandingPath(restaurantId: string, kind: "capa" | "logo", ext: string): string {
+/** Mídia do restaurante, não de um prato: vídeo de capa, logo e capa de categoria. */
+export function brandingPath(restaurantId: string, kind: "capa" | "logo" | "categoria", ext: string): string {
   const safeExt = ext.replace(/[^a-z0-9]/gi, "").toLowerCase() || "bin";
   return `${restaurantId}/casa/${kind}-${Date.now()}.${safeExt}`;
 }
