@@ -6,7 +6,8 @@ import type { AtencaoRow, CategoryRow, DishRow, EventType, MediaRow, RestaurantR
 function toRestaurant(r: RestaurantRow): Restaurant {
   return {
     id: r.id, owner_id: r.owner_id, nome: r.nome, slug: r.slug, descricao: r.descricao,
-    logo_url: r.logo_url, video_capa_url: r.video_capa_url, horario_texto: r.horario_texto,
+    logo_url: r.logo_url, logo_escuro: Boolean(r.logo_escuro),
+    video_capa_url: r.video_capa_url, horario_texto: r.horario_texto,
     horarios: r.horarios ?? [], fuso: r.fuso,
     link_google: r.link_google, publicado: r.publicado,
   };

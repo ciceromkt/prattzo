@@ -76,6 +76,7 @@ export function FormularioRestaurante({ restaurante }: { restaurante: Restaurant
         alvo="logo"
         nome="logo_url"
         valorAtual={restaurante.logo_url ?? ""}
+        escuroAtual={restaurante.logo_escuro}
         rotulo="Logo"
         dica="Aparece sobre o vídeo da capa. Fundo transparente (PNG) fica melhor."
       />

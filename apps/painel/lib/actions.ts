@@ -92,6 +92,7 @@ export async function salvarRestaurante(_e: ActionState, fd: FormData): Promise<
       horario_texto: texto(fd, "horario_texto"),
       fuso: texto(fd, "fuso") || FUSO_PADRAO,
       logo_url: texto(fd, "logo_url") || null,
+      logo_escuro: marcado(fd, "logo_escuro"),
       video_capa_url: texto(fd, "video_capa_url") || null,
     })
     .eq("id", restaurant.id);

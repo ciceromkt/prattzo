@@ -54,6 +54,8 @@ export interface Restaurant {
   slug: string;
   descricao: string;
   logo_url: string | null;
+  /** Arte escura demais para a capa: a tela põe uma placa clara atrás. */
+  logo_escuro: boolean;
   video_capa_url: string | null;
   /** Frase livre no topo do cardápio. Fica abaixo do horário calculado. */
   horario_texto: string;

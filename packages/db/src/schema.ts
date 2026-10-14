@@ -7,6 +7,7 @@ export interface RestaurantRow {
   slug: string;
   descricao: string;
   logo_url: string | null;
+  logo_escuro: boolean;
   video_capa_url: string | null;
   horario_texto: string;
   /** jsonb: validar com `lerExpedientes` antes de usar. */

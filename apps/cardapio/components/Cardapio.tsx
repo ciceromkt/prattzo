@@ -359,7 +359,11 @@ function Capa({
         <div className="hero__texto">
           {restaurant.logo_url ? (
             <>
-              <img className="hero__logo" src={restaurant.logo_url} alt={restaurant.nome} />
+              <img
+                className={`hero__logo${restaurant.logo_escuro ? " hero__logo--placa" : ""}`}
+                src={restaurant.logo_url}
+                alt={restaurant.nome}
+              />
               {/* O nome segue no documento para busca e leitor de tela: a marca
                   está na imagem, mas o texto é o que o Google e o cego leem. */}
               <h1 className="visually-hidden">{restaurant.nome}</h1>
