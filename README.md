@@ -34,8 +34,12 @@ Dois aplicativos sobre a mesma base:
 
 ## As três decisões de produto
 
-1. **Nada de IA.** Nenhuma recomendação, nenhuma pergunta ao cliente. O que faz
-   pedir é ver o prato, não ser aconselhado.
+1. **Nada de IA.** Nenhuma recomendação gerada, nenhuma pergunta ao cliente. O
+   que faz pedir é ver o prato, não ser aconselhado. A harmonização ("harmoniza
+   com") não é exceção: quem casa o prato com a bebida é o dono, no painel —
+   por categoria, de uma vez, e por par exato quando quer escrever o porquê. O
+   cardápio só resolve e mostra. Um modelo acertaria o clichê e erraria a carta
+   da casa, e não saberia dizer por quê; aqui a sugestão é sempre explicável.
 2. **Preço some de dentro do carrinho.** Está na lista e no vídeo, onde o cliente
    compara e decide. Na hora de fechar, a soma na tela só assusta e tira item.
 3. **A tela final é do cliente, não do garçom.** "O que você escolheu", não
@@ -69,10 +73,12 @@ Tudo que decide o que o cliente vê está em `packages/core`, puro e testado:
 | --- | --- | --- |
 | Preço, faixa e total do pedido | `src/price.ts` | `test/price.test.ts` |
 | Ordem, capa, esgotado e pendências | `src/menu.ts` | `test/menu.test.ts` |
+| Dias e horários do salão | `src/horarios.ts` | `test/horarios.test.ts` |
+| Harmonização entre prato e bebida | `src/harmonizacao.ts` | `test/harmonizacao.test.ts` |
 
-28 testes. `npm test` na raiz.
+73 testes. `npm test` na raiz.
 
-Três comportamentos que o código garante:
+Quatro comportamentos que o código garante:
 
 1. **Item sem preço nunca vira "R$ 0,00".** A tela diz "Preço a confirmar" e o
    painel conta quantos são.
@@ -80,6 +86,9 @@ Três comportamentos que o código garante:
    "a partir de" — o cliente nunca recebe conta menor do que a tela mostrou.
 3. **Esgotado volta sozinho às 6h.** Ninguém lembra de desmarcar no dia
    seguinte, e é assim que um item some do cardápio por uma semana.
+4. **Nada esgotado, sem foto ou sem preço é oferecido.** Vale para a sugestão de
+   fechamento e para a harmonização: oferecer o que acabou é pior que não
+   oferecer, e sem imagem não dá vontade.
 
 ## Rodar local
 

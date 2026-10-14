@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
-  esgotadoAte, FUSO_PADRAO, lerExpedientes, parsePriceToCents, proximaOrdem, slugify,
+  esgotadoAte, FUSO_PADRAO, lerExpedientes, normalizarPar, parsePriceToCents, proximaOrdem, slugify,
 } from "@prattzo/core";
 import { reordenar as reordenarLocal } from "@prattzo/core";
 import { requireRestaurant, requireUser } from "./supabase";
@@ -16,6 +16,20 @@ export interface ActionState {
 
 const texto = (fd: FormData, campo: string): string => (fd.get(campo)?.toString() ?? "").trim();
 const marcado = (fd: FormData, campo: string): boolean => fd.get(campo) === "on" || fd.get(campo) === "true";
+
+/**
+ * Ingredientes: uma linha, um ingrediente.
+ *
+ * O dono digita como ele fala, e cada casa pontua do seu jeito — por isso a
+ * quebra de linha é o separador, não a vírgula: "molho de ervas, alho e limão"
+ * é UM ingrediente, e vírgula partiria em três.
+ */
+const listaDeLinhas = (fd: FormData, campo: string, max = 24): string[] =>
+  texto(fd, campo)
+    .split("\n")
+    .map((l) => l.replace(/^[-•*\s]+/, "").trim())
+    .filter((l) => l.length > 0 && l.length <= 60)
+    .slice(0, max);
 
 /**
  * Limpa o cache dos dois lados depois de qualquer mudança no cardápio.
@@ -251,6 +265,8 @@ export async function criarPrato(_e: ActionState, fd: FormData): Promise<ActionS
     category_id: categoryId,
     nome,
     descricao: texto(fd, "descricao"),
+    ingredientes: listaDeLinhas(fd, "ingredientes"),
+    serve: texto(fd, "serve").slice(0, 40),
     preco_min_centavos: p.min,
     preco_max_centavos: p.max,
     ordem: proximaOrdem(irmaos ?? []),
@@ -283,6 +299,8 @@ export async function salvarPrato(_e: ActionState, fd: FormData): Promise<Action
   const q = client.from("dishes").update({
     nome,
     descricao: texto(fd, "descricao"),
+    ingredientes: listaDeLinhas(fd, "ingredientes"),
+    serve: texto(fd, "serve").slice(0, 40),
     preco_min_centavos: p.min,
     preco_max_centavos: p.max,
     category_id: texto(fd, "category_id") || null,
@@ -344,6 +362,98 @@ export async function alternarEsgotado(fd: FormData): Promise<void> {
     .from("restaurants").select("fuso").eq("id", restaurant.id).maybeSingle<{ fuso: string }>();
   await client.from("dishes")
     .update({ esgotado_ate: marcar ? esgotadoAte(new Date(), data?.fuso ?? FUSO_PADRAO).toISOString() : null })
+    .eq("id", texto(fd, "id")).eq("restaurant_id", restaurant.id);
+  await atualiza(restaurant.slug);
+}
+
+// ---------------------------------------------------------------- harmonização
+
+/**
+ * As combinações por categoria, salvas de uma vez.
+ *
+ * O formulário manda os pares marcados como "idA|idB". Aqui eles são
+ * normalizados (menor id primeiro, como o banco exige), deduplicados, e a
+ * tabela do restaurante é reescrita: é a operação que a tela representa — um
+ * quadro de marcações, não uma fila de alterações. Reescrever evita o estado
+ * meio-salvo de quem desmarcou três e marcou duas.
+ */
+export async function salvarParesCategoria(_e: ActionState, fd: FormData): Promise<ActionState> {
+  const { client, restaurant } = await requireRestaurant();
+
+  const { data: minhas } = await client
+    .from("menu_categories").select("id").eq("restaurant_id", restaurant.id);
+  const validas = new Set((minhas ?? []).map((c: { id: string }) => c.id));
+
+  const vistos = new Set<string>();
+  const linhas: Array<{ restaurant_id: string; a_id: string; b_id: string }> = [];
+  for (const bruto of fd.getAll("par").map((v) => v.toString())) {
+    const [x, y] = bruto.split("|");
+    const par = normalizarPar(x ?? "", y ?? "");
+    // Categoria de outro restaurante jamais entra, mesmo se vier no formulário.
+    if (!par || !validas.has(par.a_id) || !validas.has(par.b_id)) continue;
+    const chave = `${par.a_id}|${par.b_id}`;
+    if (vistos.has(chave)) continue;
+    vistos.add(chave);
+    linhas.push({ restaurant_id: restaurant.id, ...par });
+  }
+
+  const { error: eApagar } = await client
+    .from("category_pairings").delete().eq("restaurant_id", restaurant.id);
+  if (eApagar) {
+    reportError("falha_limpar_pares_categoria", eApagar);
+    return { erro: "Não deu para salvar as combinações." };
+  }
+  if (linhas.length > 0) {
+    const { error } = await client.from("category_pairings").insert(linhas);
+    if (error) {
+      reportError("falha_salvar_pares_categoria", error);
+      return { erro: "Não deu para salvar as combinações." };
+    }
+  }
+
+  await atualiza(restaurant.slug);
+  return {
+    ok: linhas.length === 0
+      ? "Salvo. Nenhuma combinação marcada — o cardápio não vai sugerir nada por categoria."
+      : `Salvo. ${linhas.length} ${linhas.length === 1 ? "combinação" : "combinações"}.`,
+  };
+}
+
+/** Par exato entre dois pratos, com a frase do dono. */
+export async function criarParPrato(_e: ActionState, fd: FormData): Promise<ActionState> {
+  const { client, restaurant } = await requireRestaurant();
+  const par = normalizarPar(texto(fd, "a_id"), texto(fd, "b_id"));
+  if (!par) return { erro: "Escolha dois itens diferentes." };
+
+  // Os dois têm que ser desta casa: o id vem de um select, mas select é HTML.
+  const { data: achados } = await client
+    .from("dishes").select("id").eq("restaurant_id", restaurant.id).in("id", [par.a_id, par.b_id]);
+  if ((achados ?? []).length !== 2) return { erro: "Item não encontrado no seu cardápio." };
+
+  const { data: atuais } = await client
+    .from("dish_pairings").select("ordem").eq("restaurant_id", restaurant.id);
+
+  const { error } = await client.from("dish_pairings").insert({
+    restaurant_id: restaurant.id,
+    ...par,
+    nota: texto(fd, "nota").slice(0, 140),
+    ordem: proximaOrdem(atuais ?? []),
+  });
+  if (error) {
+    // 23505 = índice único: o par já existe, em uma ordem ou na outra.
+    if ((error as { code?: string }).code === "23505") {
+      return { erro: "Esses dois já estão combinados." };
+    }
+    reportError("falha_criar_par_prato", error);
+    return { erro: "Não deu para salvar o par." };
+  }
+  await atualiza(restaurant.slug);
+  return { ok: "Par salvo." };
+}
+
+export async function excluirParPrato(fd: FormData): Promise<void> {
+  const { client, restaurant } = await requireRestaurant();
+  await client.from("dish_pairings").delete()
     .eq("id", texto(fd, "id")).eq("restaurant_id", restaurant.id);
   await atualiza(restaurant.slug);
 }

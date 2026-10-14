@@ -83,6 +83,21 @@ export function Cardapio({ menu }: { menu: PublicMenu }) {
     setLista(false);
   }, []);
 
+  /**
+   * Abre um prato que veio da harmonização — quase sempre de outra categoria.
+   *
+   * A fila passa a ser a categoria DELE, não a de onde o cliente veio: ele
+   * tocou no vinho, então o que vem depois são os outros vinhos. Levar a fila
+   * antiga faria o toque seguinte voltar para a comida, sem explicação.
+   */
+  const abrirHarmonizado = useCallback(
+    (prato: Dish) => {
+      const grupo = grupos.find((g) => g.pratos.some((p) => p.id === prato.id));
+      abrirPrato(prato, grupo?.pratos ?? [prato]);
+    },
+    [grupos, abrirPrato],
+  );
+
   const somar = useCallback(
     (prato: Dish, delta: number) => {
       setPedido((atual) => {
@@ -250,6 +265,13 @@ export function Cardapio({ menu }: { menu: PublicMenu }) {
           onFavoritar={favoritar}
           onCompartilhar={compartilharPrato}
           restaurantId={menu.restaurant.id}
+          paresPrato={menu.paresPrato}
+          paresCategoria={menu.paresCategoria}
+          onAbrirPar={abrirHarmonizado}
+          onQueroPar={(p) => {
+            somar(p, 1);
+            track({ restaurantId: menu.restaurant.id, tipo: "aceitou_sugestao", dishId: p.id });
+          }}
         />
       )}
 

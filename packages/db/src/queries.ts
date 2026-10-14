@@ -1,7 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Category, Dish, MediaItem, PublicMenu, Restaurant } from "@prattzo/core";
+import type {
+  Category, Dish, MediaItem, ParCategoria, ParPrato, PublicMenu, Restaurant,
+} from "@prattzo/core";
 import { montarGrupos } from "@prattzo/core";
-import type { AtencaoRow, CategoryRow, DishRow, EventType, MediaRow, RestaurantRow, ResumoRow } from "./schema";
+import type {
+  AtencaoRow, CategoryRow, DishRow, EventType, MediaRow, ParCategoriaRow, ParPratoRow,
+  RestaurantRow, ResumoRow,
+} from "./schema";
 
 function toRestaurant(r: RestaurantRow): Restaurant {
   return {
@@ -30,14 +35,28 @@ function toDish(d: DishRow, midias: MediaRow[]): Dish {
     nome: d.nome, descricao: d.descricao,
     preco_min_centavos: d.preco_min_centavos, preco_max_centavos: d.preco_max_centavos,
     ordem: d.ordem, ativo: d.ativo, esgotado_ate: d.esgotado_ate, destaque: d.destaque, versao: d.versao,
+    // Colunas novas: o banco de um cliente que ainda não rodou a migração
+    // devolve undefined aqui, e a tela não pode quebrar por causa disso.
+    ingredientes: Array.isArray(d.ingredientes) ? d.ingredientes.filter((i) => Boolean(i?.trim())) : [],
+    serve: (d.serve ?? "").trim(),
     midias: midias.filter((m) => m.dish_id === d.id).map(toMedia),
   };
+}
+
+function toParPrato(p: ParPratoRow): ParPrato {
+  return { id: p.id, a_id: p.a_id, b_id: p.b_id, nota: p.nota ?? "", ordem: p.ordem ?? 0 };
+}
+
+function toParCategoria(p: ParCategoriaRow): ParCategoria {
+  return { id: p.id, a_id: p.a_id, b_id: p.b_id };
 }
 
 export interface MenuData {
   restaurant: Restaurant;
   categorias: Category[];
   pratos: Dish[];
+  paresPrato: ParPrato[];
+  paresCategoria: ParCategoria[];
 }
 
 /** Carrega tudo de um restaurante por id (painel) ou slug (cliente). */
@@ -51,17 +70,22 @@ async function carregar(
     : await q.eq("slug", chave.slug).maybeSingle<RestaurantRow>();
   if (!rest) return null;
 
-  const [{ data: cats }, { data: pratos }, { data: midias }] = await Promise.all([
-    db.from("menu_categories").select("*").eq("restaurant_id", rest.id).order("ordem"),
-    db.from("dishes").select("*").eq("restaurant_id", rest.id).order("ordem"),
-    db.from("dish_media").select("*").eq("restaurant_id", rest.id).order("ordem"),
-  ]);
+  const [{ data: cats }, { data: pratos }, { data: midias }, { data: paresP }, { data: paresC }] =
+    await Promise.all([
+      db.from("menu_categories").select("*").eq("restaurant_id", rest.id).order("ordem"),
+      db.from("dishes").select("*").eq("restaurant_id", rest.id).order("ordem"),
+      db.from("dish_media").select("*").eq("restaurant_id", rest.id).order("ordem"),
+      db.from("dish_pairings").select("*").eq("restaurant_id", rest.id).order("ordem"),
+      db.from("category_pairings").select("*").eq("restaurant_id", rest.id),
+    ]);
 
   const rowsMidia = (midias ?? []) as MediaRow[];
   return {
     restaurant: toRestaurant(rest),
     categorias: ((cats ?? []) as CategoryRow[]).map(toCategory),
     pratos: ((pratos ?? []) as DishRow[]).map((d) => toDish(d, rowsMidia)),
+    paresPrato: ((paresP ?? []) as ParPratoRow[]).map(toParPrato),
+    paresCategoria: ((paresC ?? []) as ParCategoriaRow[]).map(toParCategoria),
   };
 }
 
@@ -72,6 +96,8 @@ export async function getPublicMenu(db: SupabaseClient, slug: string): Promise<P
   return {
     restaurant: dados.restaurant,
     grupos: montarGrupos(dados.categorias, dados.pratos, true),
+    paresPrato: dados.paresPrato,
+    paresCategoria: dados.paresCategoria,
   };
 }
 

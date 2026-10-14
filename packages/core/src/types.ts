@@ -34,7 +34,31 @@ export interface Dish {
   destaque: boolean;
   /** Versão da linha: inteiro que o banco incrementa a cada alteração. */
   versao: number;
+  /** O que vem nele, um por posição. Vazio = o dono ainda não cadastrou. */
+  ingredientes: string[];
+  /** "Serve 2 pessoas", "350 ml". Texto livre: cada casa mede do seu jeito. */
+  serve: string;
   midias: MediaItem[];
+}
+
+/**
+ * Par de harmonização, guardado sem direção: `a_id` é sempre o menor dos dois
+ * ids. Uma linha responde "o que bebo com o risoto" e "o que como com o
+ * vinho" — o dono cadastra uma vez só.
+ */
+export interface ParPrato {
+  id: string;
+  a_id: string;
+  b_id: string;
+  /** A frase do dono. Aparece na tela do cliente, nos dois sentidos. */
+  nota: string;
+  ordem: number;
+}
+
+export interface ParCategoria {
+  id: string;
+  a_id: string;
+  b_id: string;
 }
 
 export interface Category {
@@ -76,6 +100,8 @@ export interface MenuGroup {
 export interface PublicMenu {
   restaurant: Restaurant;
   grupos: MenuGroup[];
+  paresPrato: ParPrato[];
+  paresCategoria: ParCategoria[];
 }
 
 /** Uma linha do pedido que o cliente monta. */

@@ -72,6 +72,19 @@ export function videoDoPrato(d: Pick<Dish, "midias">): MediaItem | null {
   return ordenar(d.midias.map((x, i) => ({ ...x, nome: String(i) }))).find((x) => x.tipo === "video") ?? null;
 }
 
+/**
+ * Todas as mídias do prato, na ordem em que o cliente as percorre.
+ *
+ * Vídeo primeiro, foto depois, cada grupo na ordem do dono. O vídeo na frente
+ * não é preferência estética: é o que `capaDoPrato` já mostra na lista e na
+ * capa da categoria, então é o que o cliente esperava ver ao tocar. Começar
+ * pela foto faria o toque parecer ter aberto outro item.
+ */
+export function midiasDoPrato(d: Pick<Dish, "midias">): MediaItem[] {
+  const lista = ordenar(d.midias.map((x, i) => ({ ...x, nome: String(i) })));
+  return [...lista.filter((m) => m.tipo === "video"), ...lista.filter((m) => m.tipo === "foto")];
+}
+
 export function temMidia(d: Pick<Dish, "midias">): boolean {
   return d.midias.length > 0;
 }

@@ -855,3 +855,31 @@ input.campo[type="file"]::file-selector-button {
   font: inherit; font-size: .85rem; font-weight: 650; cursor: pointer;
 }
 input.campo[type="file"]::file-selector-button:hover { border-color: var(--cor-marca); }
+
+/* ------------------------------------------------------- harmonização */
+/* Textarea curta: ingrediente é linha de duas palavras, não parágrafo — a caixa
+   alta da descrição aqui faria o dono achar que precisa escrever muito. */
+textarea.campo--curto { min-height: 92px; }
+
+.harmo-quadro { display: grid; gap: 10px; margin: 12px 0 16px; }
+.harmo-linha { display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 11px 13px; border: 1px solid var(--cor-borda); border-radius: 10px;
+  background: var(--cor-papel-alto); }
+.harmo-linha__nome { min-width: 148px; font-size: .95rem; font-weight: 650; }
+.harmo-linha__nome small { display: block; font-size: .76rem; font-weight: 500;
+  color: var(--cor-tinta-fraca); }
+.harmo-linha__chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.harmo-chip { padding: 7px 13px; border: 1.5px solid var(--cor-borda-forte); border-radius: 999px;
+  background: var(--cor-papel); color: var(--cor-tinta); font: inherit; font-size: .85rem;
+  font-weight: 620; cursor: pointer; transition: border-color .14s ease, background .14s ease; }
+.harmo-chip:hover { border-color: var(--cor-marca); }
+.harmo-chip--on { border-color: var(--cor-marca); background: var(--cor-marca-fraca, rgba(224,163,65,.16)); }
+
+.harmo-pares { display: grid; gap: 9px; margin: 12px 0 18px; padding: 0; list-style: none; }
+.harmo-par { display: flex; align-items: center; gap: 12px; padding: 11px 13px;
+  border: 1px solid var(--cor-borda); border-radius: 10px; background: var(--cor-papel-alto); }
+.harmo-par__txt { flex: 1; min-width: 0; }
+.harmo-par__nomes { display: block; font-size: .95rem; font-weight: 650; }
+.harmo-par__nota { display: block; margin-top: 3px; font-size: .82rem; color: var(--cor-tinta-media, var(--cor-tinta-fraca)); }
+.harmo-par__nota--vazia { font-style: italic; color: var(--cor-tinta-fraca); }
+.harmo-novo { padding-top: 14px; border-top: 1px solid var(--cor-borda); }

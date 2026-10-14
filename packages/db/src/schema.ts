@@ -42,8 +42,27 @@ export interface DishRow {
   esgotado_ate: string | null;
   destaque: boolean;
   versao: number;
+  ingredientes: string[] | null;
+  serve: string | null;
   criado_em: string;
   atualizado_em: string;
+}
+
+/** Par de harmonização. Guardado sem direção: a_id é sempre o menor dos ids. */
+export interface ParPratoRow {
+  id: string;
+  restaurant_id: string;
+  a_id: string;
+  b_id: string;
+  nota: string;
+  ordem: number;
+}
+
+export interface ParCategoriaRow {
+  id: string;
+  restaurant_id: string;
+  a_id: string;
+  b_id: string;
 }
 
 export interface MediaRow {

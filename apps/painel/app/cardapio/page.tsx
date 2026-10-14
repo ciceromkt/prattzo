@@ -41,6 +41,8 @@ export default async function PaginaCardapio() {
             destaque: p.destaque,
             versao: p.versao,
             category_id: p.category_id,
+            ingredientes: p.ingredientes,
+            serve: p.serve,
             midias: p.midias,
           })),
         }))}

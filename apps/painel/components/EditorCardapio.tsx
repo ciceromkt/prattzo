@@ -22,6 +22,8 @@ export interface PratoView {
   destaque: boolean;
   versao: number;
   category_id: string | null;
+  ingredientes: string[];
+  serve: string;
   midias: MediaItem[];
 }
 
@@ -302,6 +304,32 @@ function FormPrato({
         <p className={`contagem${curta ? " contagem--curta" : ""}`}>
           {desc.trim().length} caracteres{curta ? " — curta demais para vender" : ""}
         </p>
+
+        <label>
+          <span className="campo-rotulo">O que vem nele</span>
+          <textarea
+            className="campo campo--curto"
+            name="ingredientes"
+            defaultValue={(prato?.ingredientes ?? []).join("\n")}
+            placeholder={"Tapioca granulada\nQueijo coalho\nMelaço de cana"}
+          />
+        </label>
+        <p className="contagem">
+          Um por linha. É a pergunta que o cliente faz ao garçom — “o que vem nesse dadinho?”.
+          No cardápio aparece em etiquetas, dentro do prato.
+        </p>
+
+        <label>
+          <span className="campo-rotulo">Serve (opcional)</span>
+          <input
+            className="campo"
+            name="serve"
+            defaultValue={prato?.serve ?? ""}
+            maxLength={40}
+            placeholder="Serve 2 pessoas"
+          />
+        </label>
+        <p className="contagem">Fica ao lado do preço. “Serve 2 pessoas”, “350 ml”, “12 unidades”.</p>
 
         {estado.erro ? <p className="contagem contagem--curta">{estado.erro}</p> : null}
         {estado.ok ? <p className="contagem">{estado.ok}</p> : null}

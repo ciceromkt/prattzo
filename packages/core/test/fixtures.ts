@@ -13,7 +13,8 @@ export function prato(over: Partial<Dish> = {}): Dish {
     nome: "Panceta do Gula",
     descricao: "Crocante por fora e macia por dentro, servida com limão e maionese verde.",
     preco_min_centavos: 5900, preco_max_centavos: null,
-    ordem: 0, ativo: true, esgotado_ate: null, destaque: false, versao: 1, midias: [], ...over,
+    ordem: 0, ativo: true, esgotado_ate: null, destaque: false, versao: 1,
+    ingredientes: [], serve: "", midias: [], ...over,
   };
 }
 
