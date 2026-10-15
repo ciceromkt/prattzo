@@ -12,7 +12,21 @@ export const VIDEO_SEGUNDOS_EXIBIDOS = 15;
 /** Acima disto o arquivo é recusado: não é vídeo de prato, é outra coisa. */
 export const MAX_VIDEO_SECONDS = 60;
 export const MAX_VIDEO_BYTES = 20 * 1024 * 1024;
+/** Teto do arquivo que SOBE como está: o logo da casa. */
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Teto da foto que o dono ESCOLHE para um prato.
+ *
+ * Muito maior que o de cima, e de propósito: a foto do prato não sobe como
+ * está. Ela passa pelo enquadramento, que a reencoda em no máximo 1080 de
+ * largura — o arquivo que chega no Storage tem algumas centenas de KB, venha
+ * de onde vier. Medir o arquivo ORIGINAL contra 5 MB barrava foto de celular
+ * novo, que sai com 8, 10, 12 MB, por um limite que o resultado nunca
+ * encostaria. Aqui o número serve só para não travar o navegador decodificando
+ * uma imagem gigante.
+ */
+export const MAX_FOTO_ESCOLHIDA_BYTES = 30 * 1024 * 1024;
 export const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm"] as const;
 export const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 /** Proporção vertical esperada (9:16), com tolerância. */
@@ -106,14 +120,21 @@ export function validateVideo(
   return { ok: errors.length === 0, errors, warnings };
 }
 
-export function validatePhoto(input: MediaValidationInput): MediaValidation {
+export function validatePhoto(
+  input: MediaValidationInput,
+  opcoes: {
+    /** Teto do arquivo escolhido. O padrão vale para quem sobe sem recortar. */
+    maxBytes?: number;
+  } = {},
+): MediaValidation {
   const errors: string[] = [];
   const warnings: string[] = [];
+  const teto = opcoes.maxBytes ?? MAX_PHOTO_BYTES;
   if (!(ALLOWED_PHOTO_TYPES as readonly string[]).includes(input.type)) {
     errors.push("Formato não aceito. Envie JPG, PNG ou WebP.");
   }
-  if (input.size > MAX_PHOTO_BYTES) {
-    errors.push(`Imagem acima de ${Math.round(MAX_PHOTO_BYTES / 1024 / 1024)} MB.`);
+  if (input.size > teto) {
+    errors.push(`Imagem acima de ${Math.round(teto / 1024 / 1024)} MB.`);
   }
   if (input.width && input.height && input.width < 800) {
     warnings.push("Imagem pequena. O ideal é pelo menos 1080px de largura.");

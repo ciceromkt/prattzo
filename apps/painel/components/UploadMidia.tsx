@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import type { MediaItem } from "@prattzo/core";
 import {
-  MAX_PHOTO_BYTES, MAX_VIDEO_BYTES, VIDEO_SEGUNDOS_EXIBIDOS, validatePhoto, validateVideo,
+  MAX_FOTO_ESCOLHIDA_BYTES, MAX_VIDEO_BYTES, VIDEO_SEGUNDOS_EXIBIDOS, validatePhoto, validateVideo,
 } from "@prattzo/core";
 import { excluirMidia, moverMidia, registrarMidia, substituirMidia } from "@/lib/actions";
 import { RecorteFoto } from "./RecorteFoto";
@@ -73,7 +73,8 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
       ehVideo ? await medirVideo(file) : await medirImagem(file);
     const check = ehVideo
       ? validateVideo({ type: file.type, size: file.size, ...medidas }, { exibidoAte: VIDEO_SEGUNDOS_EXIBIDOS })
-      : validatePhoto({ type: file.type, size: file.size, ...medidas });
+      : validatePhoto({ type: file.type, size: file.size, ...medidas },
+          { maxBytes: MAX_FOTO_ESCOLHIDA_BYTES });
 
     if (!check.ok) {
       // Limpa o campo junto com o aviso: com o nome do arquivo ainda na tela,
@@ -203,8 +204,8 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
       />
       <p className="contagem">
         Vídeo vertical até {Math.round(MAX_VIDEO_BYTES / 1024 / 1024)} MB — o cardápio mostra os
-        primeiros {VIDEO_SEGUNDOS_EXIBIDOS}s. Foto de até {Math.round(MAX_PHOTO_BYTES / 1024 / 1024)} MB,
-        e você escolhe o enquadramento antes de subir.
+        primeiros {VIDEO_SEGUNDOS_EXIBIDOS}s. Foto direto do celular serve: você escolhe o
+        enquadramento e ela sobe já reduzida.
       </p>
 
       {/* O vídeo do salão leva perto de um minuto no wi-fi de lá. Sem a barra o

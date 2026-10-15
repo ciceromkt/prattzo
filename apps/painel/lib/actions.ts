@@ -12,6 +12,8 @@ import { reportError } from "./log";
 export interface ActionState {
   erro?: string;
   ok?: string;
+  /** Item recém-criado: a tela abre a edição dele para as fotos entrarem. */
+  criado?: { id: string; categoryId: string | null };
 }
 
 const texto = (fd: FormData, campo: string): string => (fd.get(campo)?.toString() ?? "").trim();
@@ -299,7 +301,9 @@ export async function criarPrato(_e: ActionState, fd: FormData): Promise<ActionS
     .from("dishes").select("ordem").eq("restaurant_id", restaurant.id)
     .eq("category_id", categoryId ?? "");
 
-  const { error } = await client.from("dishes").insert({
+  // `select` depois do insert para devolver o id: sem ele a tela não tem como
+  // abrir o item recém-criado, e o dono ficava sem lugar para pôr as fotos.
+  const { data, error } = await client.from("dishes").insert({
     restaurant_id: restaurant.id,
     category_id: categoryId,
     nome,
@@ -309,13 +313,13 @@ export async function criarPrato(_e: ActionState, fd: FormData): Promise<ActionS
     preco_min_centavos: p.min,
     preco_max_centavos: p.max,
     ordem: proximaOrdem(irmaos ?? []),
-  });
-  if (error) {
+  }).select("id").single<{ id: string }>();
+  if (error || !data) {
     reportError("falha_criar_prato", error);
     return { erro: "Não deu para criar o item." };
   }
   await atualiza(restaurant.slug);
-  return { ok: `“${nome}” adicionado.` };
+  return { ok: `“${nome}” adicionado.`, criado: { id: data.id, categoryId } };
 }
 
 /**

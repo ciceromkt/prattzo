@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  MAX_VIDEO_BYTES, VIDEO_SEGUNDOS_EXIBIDOS, validatePhoto, validateVideo,
+  MAX_FOTO_ESCOLHIDA_BYTES, MAX_VIDEO_BYTES, VIDEO_SEGUNDOS_EXIBIDOS, validatePhoto, validateVideo,
 } from "../src/media";
 
 const video = (over: Partial<Parameters<typeof validateVideo>[0]> = {}) => ({
@@ -62,5 +62,29 @@ describe("avisos que não barram o envio", () => {
     const r = validateVideo(video({ width: 1920, height: 1080 }));
     expect(r.ok).toBe(true);
     expect(r.warnings.join(" ")).toContain("vertical");
+  });
+});
+
+describe("teto da foto escolhida", () => {
+  it("foto de celular novo (10 MB) passa no cadastro do prato: ela é reduzida no recorte", () => {
+    const r = validatePhoto(
+      { type: "image/jpeg", size: 10 * 1024 * 1024, width: 4032, height: 3024 },
+      { maxBytes: MAX_FOTO_ESCOLHIDA_BYTES },
+    );
+    expect(r.ok).toBe(true);
+  });
+
+  it("a mesma foto é recusada onde o arquivo sobe como está — o logo da casa", () => {
+    const r = validatePhoto({ type: "image/jpeg", size: 10 * 1024 * 1024 });
+    expect(r.ok).toBe(false);
+    expect(r.errors.join(" ")).toContain("5 MB");
+  });
+
+  it("arquivo absurdo continua barrado: o navegador não aguenta decodificar", () => {
+    const r = validatePhoto(
+      { type: "image/jpeg", size: 40 * 1024 * 1024 },
+      { maxBytes: MAX_FOTO_ESCOLHIDA_BYTES },
+    );
+    expect(r.ok).toBe(false);
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useFormState } from "react-dom";
 import type { Category, MediaItem } from "@prattzo/core";
 import { DESCRICAO_MINIMA, estaEsgotado, formatCents, priceLabel } from "@prattzo/core";
@@ -56,6 +56,20 @@ export function EditorCardapio({
   const [catAtiva, setCatAtiva] = useState<string | null>(grupos[0]?.categoria.id ?? null);
   const [editando, setEditando] = useState<string | null>(null);
   const [novo, setNovo] = useState(false);
+
+  /**
+   * Item criado: fecha o formulário de novo e abre a edição do item, que é
+   * onde moram as fotos e o vídeo. Troca a categoria junto, porque o dono pode
+   * ter criado o item em outra que não a que está aberta — e aí ele não
+   * encontraria o que acabou de cadastrar.
+   */
+  const [recemCriado, setRecemCriado] = useState<string | null>(null);
+  const aoCriar = useCallback((id: string, categoryId: string | null) => {
+    if (categoryId) setCatAtiva(categoryId);
+    setNovo(false);
+    setEditando(id);
+    setRecemCriado(id);
+  }, []);
   const [novaCategoria, setNovaCategoria] = useState(false);
 
   const pendentes = new Set(pendencias.map((p) => p.dish_id));
@@ -63,7 +77,9 @@ export function EditorCardapio({
   const grupo = grupos.find((g) => g.categoria.id === catAtiva) ?? grupos[0];
   const iGrupo = grupos.findIndex((g) => g.categoria.id === grupo?.categoria.id);
 
-  const trocar = (id: string) => { setCatAtiva(id); setEditando(null); setNovo(false); };
+  const trocar = (id: string) => {
+    setCatAtiva(id); setEditando(null); setNovo(false); setRecemCriado(null);
+  };
 
   return (
     <div className="duas-colunas">
@@ -129,7 +145,13 @@ export function EditorCardapio({
               const esgotado = estaEsgotado(p);
               const faltas = faltasDe(p.id);
               return editando === p.id ? (
-                <FormPrato key={p.id} prato={p} grupos={grupos} onFechar={() => setEditando(null)} />
+                <FormPrato
+                  key={p.id}
+                  prato={p}
+                  grupos={grupos}
+                  recemCriado={recemCriado === p.id}
+                  onFechar={() => { setEditando(null); setRecemCriado(null); }}
+                />
               ) : (
                 <div className={`editor-item${p.ativo ? "" : " editor-item--off"}`} key={p.id}>
                   {p.midias[0] ? (
@@ -184,6 +206,7 @@ export function EditorCardapio({
                 categoriaId={grupo.categoria.id === "sem-categoria" ? null : grupo.categoria.id}
                 grupos={grupos}
                 onFechar={() => setNovo(false)}
+                onCriado={aoCriar}
               />
             ) : (
               <button type="button" className="bt bt--novo" onClick={() => setNovo(true)}>
@@ -228,12 +251,16 @@ function Mover({
 }
 
 function FormPrato({
-  prato, categoriaId, grupos, onFechar,
+  prato, categoriaId, grupos, onFechar, onCriado, recemCriado = false,
 }: {
   prato?: PratoView;
   categoriaId?: string | null;
   grupos: GrupoView[];
   onFechar: () => void;
+  /** Acabou de ser criado nesta tela: diz o que aconteceu e o que vem agora. */
+  recemCriado?: boolean;
+  /** Só no formulário de item novo: entrega o id assim que ele existe. */
+  onCriado?: (id: string, categoryId: string | null) => void;
 }) {
   const [desc, setDesc] = useState(prato?.descricao ?? "");
   const curta = desc.trim().length < DESCRICAO_MINIMA;
@@ -241,6 +268,19 @@ function FormPrato({
   // entrega só o formData no primeiro argumento e o salvar nunca acontece —
   // foi o que o teste contra o banco pegou.
   const [estado, acao] = useFormState<ActionState, FormData>(prato ? salvarPrato : criarPrato, {});
+
+  /**
+   * Criar o item abre a edição DELE na hora.
+   *
+   * Antes, "Adicionar" fechava o assunto: o item ia para a lista e a área de
+   * fotos e vídeo não existia, porque ela depende de um id que só passa a
+   * existir depois de gravar. O dono tinha que fechar o formulário, achar o
+   * item na lista e clicar em Editar para então subir a foto — três passos que
+   * ninguém adivinha, no produto cujo ponto inteiro é a foto e o vídeo.
+   */
+  useEffect(() => {
+    if (estado.criado) onCriado?.(estado.criado.id, estado.criado.categoryId);
+  }, [estado.criado, onCriado]);
 
   return (
     <div className="editor-form">
@@ -360,6 +400,15 @@ function FormPrato({
 
       {prato ? (
         <>
+          {/* A confirmação de "criado" morre junto com o formulário de item
+              novo, que é desmontado. Sem esta linha o cartão só muda sozinho e
+              o dono não sabe se gravou nem o que fazer em seguida. */}
+          {recemCriado ? (
+            <p className="aviso aviso--ok">
+              ✓ “{prato.nome}” está no cardápio. Agora a foto ou o vídeo — é o que faz o cliente pedir.
+            </p>
+          ) : null}
+
           <UploadMidia dishId={prato.id} midias={prato.midias} />
 
           <div className="linha-acoes">
