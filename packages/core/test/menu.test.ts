@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   capaDaCategoria, capaDoPrato, diagnosticar, esgotadoAte, estaEsgotado,
   filaDeStories, montarGrupos, opcoesDeCapa, ordenar, proximaOrdem, reordenar,
-  sugestoesParaPedido, videoDoPrato,
+  moverNaLista, sugestoesParaPedido, videoDoPrato,
 } from "../src/menu";
 import type { Dish } from "../src/types";
 import { categoria, midia, prato } from "./fixtures";
@@ -262,5 +262,38 @@ describe("esgotadoAte no fuso do restaurante", () => {
       timeZone: "America/Manaus", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
     }).format(ate);
     expect(emManaus).toBe("14/10, 06:00");
+  });
+});
+
+describe("moverNaLista", () => {
+  const lista = ["a", "b", "c", "d", "e"];
+
+  it("encaixa na posição, empurrando o resto — não troca com o vizinho", () => {
+    // O que o dono faz de verdade: levar Drinks do fim para o começo. Trocando
+    // de dois em dois a lista chegaria invertida.
+    expect(moverNaLista(lista, 4, 0)).toEqual(["e", "a", "b", "c", "d"]);
+  });
+
+  it("leva o primeiro para o fim sem mexer na ordem relativa dos outros", () => {
+    expect(moverNaLista(lista, 0, 4)).toEqual(["b", "c", "d", "e", "a"]);
+  });
+
+  it("move uma casa como o ↑ movia", () => {
+    expect(moverNaLista(lista, 2, 1)).toEqual(["a", "c", "b", "d", "e"]);
+  });
+
+  it("não inventa posição fora da lista", () => {
+    expect(moverNaLista(lista, 0, 99)).toEqual(["b", "c", "d", "e", "a"]);
+    expect(moverNaLista(lista, 3, -5)).toEqual(["d", "a", "b", "c", "e"]);
+  });
+
+  it("devolve uma cópia: a lista de origem não muda", () => {
+    const original = [...lista];
+    moverNaLista(lista, 0, 3);
+    expect(lista).toEqual(original);
+  });
+
+  it("índice inexistente devolve a mesma ordem", () => {
+    expect(moverNaLista(lista, 9, 0)).toEqual(lista);
   });
 });

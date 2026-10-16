@@ -824,12 +824,58 @@ textarea.campo { min-height: 132px; resize: vertical; line-height: 1.55; }
 .rail__alerta { flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: var(--cor-acento); }
 .rail__novo { margin-top: 6px; border-style: dashed; border-color: var(--cor-borda); color: var(--cor-tinta-fraca); }
 
+/* Ordenando, a coluna abre: o que o dono compara são os NOMES, e em 232px
+   "Pratos Especiais" vira "Pratos …" ao lado do punho e das setas. Navegador
+   sem :has() só mostra o nome com reticências — perde, mas não quebra.
+   Só no desktop: no celular a tela é uma coluna só, e esta regra tem
+   especificidade maior que a do @media — sem o limite ela devolveria as duas
+   colunas num aparelho de 390px. */
+@media (min-width: 861px) {
+  .duas-colunas:has(.rail--ordenando) { grid-template-columns: 320px minmax(0, 1fr); }
+}
+
+.rail__cabeca { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 2px 6px; }
+.rail__cabeca .rail__titulo { padding: 0 8px 0 10px; }
+
+/* ------------------------------------------------- ordem das categorias
+   A ordem desta lista é a ordem do cardápio do cliente. Por isso ela se
+   arruma aqui, inteira e à vista, e só vai ao ar no Salvar. */
+/* min-width: 0 em toda a corrente: sem isso o cartão cresce até caber o
+   conteúdo e invade a coluna da direita, em vez de o nome ganhar reticências. */
+.ordem { display: grid; gap: 10px; min-width: 0; padding: 10px; border: 1px solid var(--cor-borda);
+  border-radius: 12px; background: var(--cor-papel-alto); }
+.ordem > *, .ordem__lista > * { min-width: 0; }
+.ordem__ajuda { margin: 0; font-size: .74rem; line-height: 1.45; color: var(--cor-tinta-fraca); }
+.ordem__lista { display: grid; gap: 4px; min-width: 0; margin: 0; padding: 0; list-style: none; }
+.ordem__linha { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 7px 7px;
+  border: 1px solid var(--cor-borda); border-radius: 9px; background: var(--cor-papel);
+  font-size: .84rem; font-weight: 600; color: var(--cor-tinta-media); }
+/* A linha que está sendo arrastada sai do plano das outras. */
+.ordem__linha--pega { border-color: var(--cor-tinta); box-shadow: 0 6px 16px rgb(0 0 0 / .12); }
+.ordem__punho { display: inline-flex; align-items: center; padding: 2px 4px; border: 0;
+  background: none; color: var(--cor-tinta-fraca); font-size: 1rem; line-height: 1;
+  cursor: grab; /* sem isto o arrasto no celular rola a página em vez de mover a linha */
+  touch-action: none; }
+.ordem__punho:active { cursor: grabbing; }
+.ordem__punho:focus-visible { outline: 2px solid var(--cor-tinta); outline-offset: 2px; border-radius: 6px; }
+.ordem__pos { flex: 0 0 auto; min-width: 14px; font-size: .72rem; font-variant-numeric: tabular-nums;
+  color: var(--cor-tinta-fraca); }
+.ordem__nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ordem__conta { flex: 0 0 auto; font-size: .74rem; font-variant-numeric: tabular-nums; color: var(--cor-tinta-fraca); }
+.ordem__pe { display: flex; align-items: center; gap: 8px; }
+
 .painel-vazio { padding: 40px 20px; text-align: center; color: var(--cor-tinta-fraca); font-size: .88rem; }
 
 @media (max-width: 860px) {
   .duas-colunas { grid-template-columns: 1fr; }
   .rail { position: static; grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding-bottom: 4px; }
   .rail__titulo { display: none; }
+  .rail__cabeca { grid-row: 1; }
+  /* Ordenando, a lista volta a ser uma coluna: comparar arranjos numa tira que
+     rola para o lado é impossível, e arrastar nela briga com o rolamento. */
+  .rail--ordenando { grid-auto-flow: row; grid-auto-columns: auto; overflow-x: visible; }
+  .rail--ordenando .rail__cabeca { justify-content: flex-start; }
+  .rail--ordenando .rail__titulo { display: block; }
 }
 
 /* ------------------------------------------------- dias e horários */

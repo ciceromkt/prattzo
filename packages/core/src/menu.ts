@@ -212,6 +212,22 @@ export function reordenar<T extends { id: string; ordem: number; nome: string }>
   return [{ id: a.id, ordem: j }, { id: b.id, ordem: i }];
 }
 
+/**
+ * Tira o item da posição `de` e encaixa em `para`, empurrando o resto.
+ *
+ * É o que o arrasto faz na tela: não é uma TROCA entre dois (isso é o `↑`),
+ * é mudar de lugar. Levar o primeiro para o fim com trocas inverteria a lista
+ * toda pelo caminho; aqui os outros só andam uma casa.
+ */
+export function moverNaLista<T>(lista: readonly T[], de: number, para: number): T[] {
+  if (de === para || de < 0 || de >= lista.length) return [...lista];
+  const destino = Math.max(0, Math.min(lista.length - 1, para));
+  const copia = [...lista];
+  const [item] = copia.splice(de, 1);
+  copia.splice(destino, 0, item as T);
+  return copia;
+}
+
 export interface Sugestao {
   prato: Dish;
   /** Rótulo curto sobre o item: a categoria que faltou, ou "Sugestão da casa". */

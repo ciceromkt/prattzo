@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useFormState } from "react-dom";
 import type { Category, MediaItem } from "@prattzo/core";
-import { DESCRICAO_MINIMA, estaEsgotado, formatCents, priceLabel } from "@prattzo/core";
+import { DESCRICAO_MINIMA, estaEsgotado, formatCents, moverNaLista, priceLabel } from "@prattzo/core";
 import {
   alternarAtivo, alternarDestaque, alternarEsgotado, criarCategoria, criarPrato,
-  excluirCategoria, excluirPrato, moverCategoria, moverPrato, renomearCategoria, salvarPrato,
+  excluirCategoria, excluirPrato, moverPrato, ordenarCategorias,
+  renomearCategoria, salvarPrato,
   type ActionState,
 } from "@/lib/actions";
 import { UploadMidia } from "./UploadMidia";
@@ -77,11 +79,11 @@ export function EditorCardapio({
     setRecemCriado(mensagem);
   }, []);
   const [novaCategoria, setNovaCategoria] = useState(false);
+  const [ordenando, setOrdenando] = useState(false);
 
   const pendentes = new Set(pendencias.map((p) => p.dish_id));
   const faltasDe = (id: string) => pendencias.find((p) => p.dish_id === id)?.faltas ?? [];
   const grupo = grupos.find((g) => g.categoria.id === catAtiva) ?? grupos[0];
-  const iGrupo = grupos.findIndex((g) => g.categoria.id === grupo?.categoria.id);
 
   const trocar = (id: string) => {
     setCatAtiva(id); setEditando(null); setNovo(false); setRecemCriado(null);
@@ -89,9 +91,23 @@ export function EditorCardapio({
 
   return (
     <div className="duas-colunas">
-      <nav className="rail" aria-label="Categorias">
-        <p className="rail__titulo">Categorias</p>
-        {grupos.map((g) => {
+      <nav className={ordenando ? "rail rail--ordenando" : "rail"} aria-label="Categorias">
+        <div className="rail__cabeca">
+          <p className="rail__titulo">Categorias</p>
+          {grupos.length > 1 ? (
+            <button
+              type="button"
+              className="bt bt--mini"
+              onClick={() => setOrdenando((v) => !v)}
+            >
+              {ordenando ? "Cancelar" : "⇅ Ordenar"}
+            </button>
+          ) : null}
+        </div>
+
+        {ordenando ? <OrdemCategorias grupos={grupos} onFechar={() => setOrdenando(false)} /> : null}
+
+        {ordenando ? null : grupos.map((g) => {
           const falta = g.pratos.some((p) => pendentes.has(p.id));
           return (
             <button
@@ -108,7 +124,7 @@ export function EditorCardapio({
           );
         })}
 
-        {novaCategoria ? null : (
+        {novaCategoria || ordenando ? null : (
           <button type="button" className="rail__item rail__novo" onClick={() => setNovaCategoria(true)}>
             + Nova categoria
           </button>
@@ -135,7 +151,10 @@ export function EditorCardapio({
                 <button type="submit" className="bt bt--mini">Renomear</button>
               </form>
               <span className="editor-grupo__acoes">
-                <Mover action={moverCategoria} id={grupo.categoria.id} cima={iGrupo > 0} baixo={iGrupo < grupos.length - 1} />
+                {/* A ordem mora na lista da esquerda, no "⇅ Ordenar": é lá que o
+                    dono vê as categorias em fila e consegue comparar arranjos.
+                    Aqui ficavam duas setas que mexiam uma casa por vez — perto
+                    do Excluir, longe da lista, e ninguém as achava. */}
                 <form action={excluirCategoria}>
                   <input type="hidden" name="id" value={grupo.categoria.id} />
                   <button type="submit" className="bt bt--mini bt--perigo">Excluir</button>
@@ -226,6 +245,139 @@ export function EditorCardapio({
             )}
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Arrumar a ordem das categorias.
+ *
+ * Esta ordem é a que o CLIENTE vê: a fila de atalhos no topo do cardápio e a
+ * sequência da grade na home. Era a única coisa do painel que só dava para
+ * mexer uma casa por vez, com uma ida ao servidor por casa — e escondida no
+ * cabeçalho da categoria aberta, que é onde ninguém procura a ordem da lista.
+ *
+ * Aqui o dono experimenta à vontade — arrastando pelo punho, ou nas setas, que
+ * é o que funciona no celular e no teclado — e grava uma vez no fim. Enquanto
+ * ele não salva, nada muda para o cliente.
+ */
+function OrdemCategorias({
+  grupos, onFechar,
+}: {
+  grupos: GrupoView[];
+  onFechar: () => void;
+}) {
+  const [ids, setIds] = useState<string[]>(() => grupos.map((g) => g.categoria.id));
+  const [pegando, setPegando] = useState<string | null>(null);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const listaRef = useRef<HTMLUListElement | null>(null);
+
+  const nomes = new Map(grupos.map((g) => [g.categoria.id, g.categoria.nome] as const));
+  const contas = new Map(grupos.map((g) => [g.categoria.id, g.pratos.length] as const));
+  const mudou = ids.some((id, i) => grupos[i]?.categoria.id !== id);
+
+  const mover = (de: number, para: number) => {
+    if (para < 0 || para >= ids.length) return;
+    setIds((atual) => moverNaLista(atual, de, para));
+  };
+
+  /**
+   * A linha que está sob o dedo passa a ser a nova posição.
+   *
+   * Sem fantasma flutuando: a própria linha troca de lugar enquanto o dedo
+   * anda, então o que o dono vê durante o arrasto já é o resultado. O punho
+   * continua sendo o mesmo elemento (a chave é o id), por isso a captura do
+   * ponteiro sobrevive à reordenação.
+   */
+  const aoArrastar = (e: ReactPointerEvent<HTMLElement>) => {
+    if (!pegando || !listaRef.current) return;
+    const linhas = Array.from(listaRef.current.querySelectorAll<HTMLElement>("[data-id]"));
+    const alvo = linhas.findIndex((el) => {
+      const r = el.getBoundingClientRect();
+      return e.clientY >= r.top && e.clientY <= r.bottom;
+    });
+    const de = ids.indexOf(pegando);
+    if (alvo < 0 || de < 0 || alvo === de) return;
+    mover(de, alvo);
+  };
+
+  const comTeclado = (e: ReactKeyboardEvent<HTMLButtonElement>, i: number) => {
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    e.preventDefault();
+    const punho = e.currentTarget;
+    mover(i, e.key === "ArrowUp" ? i - 1 : i + 1);
+    requestAnimationFrame(() => punho.focus());
+  };
+
+  const salvar = async () => {
+    setSalvando(true);
+    setErro(null);
+    const r = await ordenarCategorias(ids);
+    setSalvando(false);
+    if (r?.erro) { setErro(r.erro); return; }
+    onFechar();
+  };
+
+  return (
+    <div className="ordem">
+      <p className="ordem__ajuda">
+        Arraste pelo <span aria-hidden="true">⠿</span> ou use as setas. É nesta ordem que o cliente
+        vê as categorias no cardápio.
+      </p>
+
+      <ul className="ordem__lista" ref={listaRef}>
+        {ids.map((id, i) => (
+          <li
+            key={id}
+            data-id={id}
+            className={pegando === id ? "ordem__linha ordem__linha--pega" : "ordem__linha"}
+          >
+            <button
+              type="button"
+              className="ordem__punho"
+              aria-label={`Mover ${nomes.get(id) ?? ""}`}
+              onPointerDown={(e) => {
+                e.currentTarget.setPointerCapture(e.pointerId);
+                setPegando(id);
+              }}
+              onPointerMove={aoArrastar}
+              onPointerUp={() => setPegando(null)}
+              onPointerCancel={() => setPegando(null)}
+              onKeyDown={(e) => comTeclado(e, i)}
+            >
+              <span aria-hidden="true">⠿</span>
+            </button>
+            <span className="ordem__pos" aria-hidden="true">{i + 1}</span>
+            <span className="ordem__nome">{nomes.get(id)}</span>
+            <span className="ordem__conta">{contas.get(id)}</span>
+            <span className="mover">
+              <button
+                type="button" className="bt bt--mini" aria-label="Subir"
+                disabled={i === 0} onClick={() => mover(i, i - 1)}
+              >↑</button>
+              <button
+                type="button" className="bt bt--mini" aria-label="Descer"
+                disabled={i === ids.length - 1} onClick={() => mover(i, i + 1)}
+              >↓</button>
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      {erro ? <p className="aviso aviso--erro">{erro}</p> : null}
+
+      <div className="ordem__pe">
+        <button
+          type="button" className="bt bt--principal"
+          onClick={salvar} disabled={!mudou || salvando}
+        >
+          {salvando ? "Salvando…" : "Salvar ordem"}
+        </button>
+        <button type="button" className="bt bt--mini" onClick={onFechar} disabled={salvando}>
+          Descartar
+        </button>
       </div>
     </div>
   );

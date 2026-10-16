@@ -16,6 +16,9 @@ export interface ActionState {
   criado?: { id: string; categoryId: string | null };
 }
 
+/** Id que vem do cliente: confere o formato antes de virar argumento no banco. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const texto = (fd: FormData, campo: string): string => (fd.get(campo)?.toString() ?? "").trim();
 const marcado = (fd: FormData, campo: string): boolean => fd.get(campo) === "on" || fd.get(campo) === "true";
 
@@ -225,6 +228,31 @@ export async function moverCategoria(fd: FormData): Promise<void> {
     p_direcao: texto(fd, "direcao") === "cima" ? "cima" : "baixo",
   });
   await atualiza(restaurant.slug);
+}
+
+/**
+ * Grava a ordem inteira das categorias, como o dono deixou na tela.
+ *
+ * Recebe os ids na ordem final, não um "sobe um". É o par da tela de arrastar:
+ * ele experimenta à vontade sem o cardápio do cliente mudando a cada casa, e o
+ * Salvar grava uma vez. A função no banco confere que a lista é completa e de
+ * uma casa só — ver supabase/migrations/..._ordenar_categorias.sql.
+ */
+export async function ordenarCategorias(ids: string[]): Promise<ActionState> {
+  const { client, restaurant } = await requireRestaurant();
+  const limpos = ids.map((i) => i.trim()).filter((i) => UUID.test(i));
+  if (limpos.length !== ids.length || new Set(limpos).size !== limpos.length) {
+    return { erro: "Lista de categorias inválida." };
+  }
+  if (limpos.length === 0) return {};
+
+  const { error } = await client.rpc("ordenar_categorias", { p_ids: limpos });
+  if (error) {
+    reportError("falha_ordenar_categorias", error);
+    return { erro: "Não deu para salvar a ordem. Tente de novo." };
+  }
+  await atualiza(restaurant.slug);
+  return { ok: "Ordem salva. É nesta ordem que o cliente vê as categorias." };
 }
 
 /**
