@@ -154,6 +154,25 @@ export function mediaPath(restaurantId: string, dishId: string, kind: "foto" | "
   return `${restaurantId}/${dishId}/${kind}-${Date.now()}.${safeExt}`;
 }
 
+/**
+ * Caminho da mídia de um item que ainda não existe.
+ *
+ * O cadastro de item novo é uma tela só: o dono preenche os dados E escolhe as
+ * fotos antes de gravar qualquer coisa. Mas `mediaPath` exige o id do prato, que
+ * só nasce no Salvar — e esperar o Salvar para então subir um vídeo de 18 MB
+ * transformaria o botão numa espera de um minuto, com tudo para perder se a
+ * conexão cair no fim.
+ *
+ * Então o arquivo sobe assim que é escolhido, para esta pasta, enquanto o dono
+ * ainda digita a descrição. O Salvar só grava as linhas apontando para ele. A
+ * primeira pasta continua sendo o id do restaurante, que é o que a política do
+ * Storage confere.
+ */
+export function rascunhoPath(restaurantId: string, kind: "foto" | "video", ext: string): string {
+  const safeExt = ext.replace(/[^a-z0-9]/gi, "").toLowerCase() || "bin";
+  return `${restaurantId}/novos/${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
+}
+
 /** Mídia do restaurante, não de um prato: vídeo de capa, logo e capa de categoria. */
 export function brandingPath(restaurantId: string, kind: "capa" | "logo" | "categoria", ext: string): string {
   const safeExt = ext.replace(/[^a-z0-9]/gi, "").toLowerCase() || "bin";

@@ -13,11 +13,38 @@ type EmRecorte =
   | { modo: "nova"; src: string; arquivo: File }
   | { modo: "trocar"; src: string; midiaId: string };
 
+/** Mídia já no Storage, ainda sem linha no banco: o item nem existe. */
+export interface MidiaPendente {
+  tipo: "foto" | "video";
+  url: string;
+  posterUrl: string | null;
+  duracaoS: number | null;
+}
+
+/**
+ * Para onde vai o arquivo depois de subir.
+ *
+ * - `prato`: o item já existe, então a linha entra no banco na hora.
+ * - `rascunho`: o item está sendo cadastrado agora. O arquivo sobe na mesma
+ *   hora (para o Salvar não virar uma espera de um minuto), mas quem guarda a
+ *   referência é o formulário, e só o Salvar grava tudo junto.
+ */
+export type DestinoMidia =
+  | { modo: "prato"; dishId: string }
+  | { modo: "rascunho"; pendentes: MidiaPendente[]; onMudar: (m: MidiaPendente[]) => void };
+
 /**
  * Envia direto do navegador para o Storage, por URL assinada: o arquivo não
  * passa pelo servidor do painel. Vídeo é validado antes (vertical, até 15s).
  */
-export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaItem[] }) {
+export function UploadMidia({
+  destino, midias = [],
+}: {
+  destino: DestinoMidia;
+  /** Só no modo `prato`: o que já está gravado. */
+  midias?: MediaItem[];
+}) {
+  const dishId = destino.modo === "prato" ? destino.dishId : null;
   const [erro, setErro] = useState<string | null>(null);
   const [avisos, setAvisos] = useState<string[]>([]);
   const [enviando, setEnviando] = useState<null | "foto" | "video">(null);
@@ -40,7 +67,7 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
         const r = await fetch("/api/upload", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ dishId, tipo, contentType }),
+          body: JSON.stringify(dishId ? { dishId, tipo, contentType } : { alvo: "rascunho", tipo, contentType }),
         });
         const { uploadUrl, token, publicUrl } = (await r.json()) as {
           uploadUrl?: string; token?: string; publicUrl?: string; erro?: string;
@@ -95,17 +122,29 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
     setProgresso(0);
     try {
       const publicUrl = await subir(file, "video", file.type);
-      const ok = await registrarMidia({
-        dishId, tipo: "video", url: publicUrl, posterUrl: publicUrl, duracaoS,
-      });
-      if (!ok.ok) throw new Error("não gravou");
+      await guardar({ tipo: "video", url: publicUrl, posterUrl: publicUrl, duracaoS });
       if (input.current) input.current.value = "";
-      setFeito("Vídeo no cardápio.");
+      setFeito(dishId ? "Vídeo no cardápio." : "Vídeo pronto. Entra quando você salvar.");
     } catch {
       setErro("Não deu para enviar. Confira a conexão e tente de novo.");
     } finally {
       setEnviando(null);
     }
+  }
+
+  /**
+   * O único lugar onde os dois destinos se separam: item que já existe grava
+   * agora; item em cadastro fica com o formulário até o Salvar.
+   */
+  async function guardar(m: MidiaPendente) {
+    if (destino.modo === "rascunho") {
+      destino.onMudar([...destino.pendentes, m]);
+      return;
+    }
+    const ok = await registrarMidia({
+      dishId: destino.dishId, tipo: m.tipo, url: m.url, posterUrl: m.posterUrl, duracaoS: m.duracaoS,
+    });
+    if (!ok.ok) throw new Error("não gravou");
   }
 
   /** Volta do recorte com a foto já no enquadramento escolhido. */
@@ -119,12 +158,15 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
     setProgresso(0);
     try {
       const publicUrl = await subir(blob, "foto", "image/jpeg");
-      const ok = alvo.modo === "nova"
-        ? await registrarMidia({ dishId, tipo: "foto", url: publicUrl, posterUrl: null, duracaoS: null })
-        : await substituirMidia({ id: alvo.midiaId, url: publicUrl });
-      if (!ok.ok) throw new Error("não gravou");
+      if (alvo.modo === "trocar") {
+        const ok = await substituirMidia({ id: alvo.midiaId, url: publicUrl });
+        if (!ok.ok) throw new Error("não gravou");
+        setFeito("Foto reenquadrada.");
+      } else {
+        await guardar({ tipo: "foto", url: publicUrl, posterUrl: null, duracaoS: null });
+        setFeito(dishId ? "Foto no cardápio." : "Foto pronta. Entra quando você salvar.");
+      }
       if (input.current) input.current.value = "";
-      setFeito(alvo.modo === "nova" ? "Foto no cardápio." : "Foto reenquadrada.");
     } catch {
       setErro("Não deu para enviar. Confira a conexão e tente de novo.");
     } finally {
@@ -136,9 +178,33 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
     <div className="midia-bloco">
       <p className="editor-form__secao">
         Fotos e vídeo
-        {/* O dono precisa saber disto ANTES de procurar um botão de salvar. */}
-        <span className="selo-auto">grava sozinho</span>
+        {/* No item que já existe o envio grava sozinho; no cadastro, quem grava
+            é o Salvar lá embaixo. Dizer qual dos dois evita o dono procurar um
+            botão que não existe — ou achar que perdeu o que acabou de subir. */}
+        {destino.modo === "prato" ? <span className="selo-auto">grava sozinho</span> : null}
       </p>
+
+      {destino.modo === "rascunho" && destino.pendentes.length > 0 ? (
+        <div className="midia-lista">
+          {destino.pendentes.map((m, i) => (
+            <div className="midia-item" key={m.url}>
+              <img src={m.posterUrl ?? m.url} alt="" />
+              {m.tipo === "video" ? <span className="midia-item__selo">vídeo</span> : null}
+              {i === 0 ? <span className="midia-item__capa">capa</span> : null}
+              <span className="midia-item__acoes">
+                <button
+                  type="button"
+                  className="bt bt--mini bt--perigo"
+                  aria-label="Tirar esta mídia"
+                  onClick={() => destino.onMudar(destino.pendentes.filter((x) => x.url !== m.url))}
+                >
+                  ✕
+                </button>
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {midias.length > 0 ? (
         <div className="midia-lista">
@@ -163,7 +229,7 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
                 {(["cima", "baixo"] as const).map((dir) => (
                   <form action={moverMidia} key={dir}>
                     <input type="hidden" name="id" value={m.id} />
-                    <input type="hidden" name="dish_id" value={dishId} />
+                    <input type="hidden" name="dish_id" value={dishId ?? ""} />
                     <input type="hidden" name="direcao" value={dir} />
                     <button
                       type="submit"
@@ -186,9 +252,13 @@ export function UploadMidia({ dishId, midias }: { dishId: string; midias: MediaI
       ) : null}
 
       <p className="contagem">
-        {midias.length > 0
-          ? "Já no cardápio. A primeira imagem é a capa do item; use as setas para reordenar."
-          : "O que você enviar aqui entra no cardápio na hora."}
+        {destino.modo === "rascunho"
+          ? (destino.pendentes.length > 0
+              ? "A primeira é a capa do item. Elas entram no cardápio junto com o Salvar, lá embaixo."
+              : "Pode escolher agora: o arquivo já sobe enquanto você preenche o resto.")
+          : (midias.length > 0
+              ? "Já no cardápio. A primeira imagem é a capa do item; use as setas para reordenar."
+              : "O que você enviar aqui entra no cardápio na hora.")}
       </p>
 
       <input

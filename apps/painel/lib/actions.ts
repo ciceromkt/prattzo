@@ -288,6 +288,44 @@ function precos(fd: FormData): { min: number; max: number | null } | string {
   return { min: min ?? 0, max };
 }
 
+/**
+ * As mídias que o formulário de item novo trouxe junto.
+ *
+ * Elas já estão no Storage — sobem enquanto o dono digita — e chegam aqui como
+ * uma lista de URLs. Por isso cada uma é conferida: tem que apontar para a
+ * pasta DESTE restaurante dentro do bucket, e nada além disso entra. Sem essa
+ * conferência, um campo escondido no formulário poderia fazer o cardápio
+ * exibir qualquer endereço da internet.
+ */
+function midiasDoFormulario(fd: FormData, restaurantId: string): Array<{
+  tipo: "foto" | "video"; url: string; poster_url: string | null; duracao_s: number | null;
+}> {
+  let bruto: unknown;
+  try {
+    bruto = JSON.parse(texto(fd, "midias") || "[]");
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(bruto)) return [];
+
+  const prefixo = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}/storage/v1/object/public/midia/${restaurantId}/`;
+  const nossa = (u: unknown) => typeof u === "string" && prefixo.length > 40 && u.startsWith(prefixo);
+
+  return bruto.slice(0, 12).flatMap((m) => {
+    const item = m as Record<string, unknown>;
+    const tipo = item.tipo === "video" ? "video" : "foto";
+    if (!nossa(item.url)) return [];
+    const poster = nossa(item.posterUrl) ? (item.posterUrl as string) : null;
+    return [{
+      tipo: tipo as "foto" | "video",
+      url: item.url as string,
+      // O banco exige poster em vídeo; o quadro do próprio arquivo serve.
+      poster_url: tipo === "video" ? poster ?? (item.url as string) : null,
+      duracao_s: typeof item.duracaoS === "number" ? item.duracaoS : null,
+    }];
+  });
+}
+
 export async function criarPrato(_e: ActionState, fd: FormData): Promise<ActionState> {
   const { client, restaurant } = await requireRestaurant();
   const nome = texto(fd, "nome");
@@ -318,8 +356,32 @@ export async function criarPrato(_e: ActionState, fd: FormData): Promise<ActionS
     reportError("falha_criar_prato", error);
     return { erro: "Não deu para criar o item." };
   }
+
+  // As fotos e o vídeo entram na mesma gravação: para o dono, um Salvar só.
+  const midias = midiasDoFormulario(fd, restaurant.id);
+  if (midias.length > 0) {
+    const { error: eMidia } = await client.from("dish_media").insert(
+      midias.map((m, i) => ({ dish_id: data.id, restaurant_id: restaurant.id, ordem: i, ...m })),
+    );
+    if (eMidia) {
+      // O item já existe e está certo; o que faltou foi a mídia. Dizer isso é
+      // melhor do que apagar o item e fazer o dono digitar tudo de novo.
+      reportError("falha_midia_do_item_novo", eMidia, { dishId: data.id });
+      await atualiza(restaurant.slug);
+      return {
+        erro: `“${nome}” foi criado, mas as fotos não entraram. Abra o item em Editar e envie de novo.`,
+        criado: { id: data.id, categoryId },
+      };
+    }
+  }
+
   await atualiza(restaurant.slug);
-  return { ok: `“${nome}” adicionado.`, criado: { id: data.id, categoryId } };
+  return {
+    ok: midias.length > 0
+      ? `“${nome}” entrou no cardápio com ${midias.length} ${midias.length === 1 ? "mídia" : "mídias"}.`
+      : `“${nome}” entrou no cardápio.`,
+    criado: { id: data.id, categoryId },
+  };
 }
 
 /**

@@ -10,6 +10,7 @@ import {
   type ActionState,
 } from "@/lib/actions";
 import { UploadMidia } from "./UploadMidia";
+import type { MidiaPendente } from "./UploadMidia";
 
 export interface PratoView {
   id: string;
@@ -63,12 +64,17 @@ export function EditorCardapio({
    * ter criado o item em outra que não a que está aberta — e aí ele não
    * encontraria o que acabou de cadastrar.
    */
+  /**
+   * Item criado: o formulário fecha e o item aparece na lista, completo — com
+   * as fotos, porque elas foram no mesmo Salvar. A confirmação morre junto com
+   * o formulário desmontado, então ela sobe para cá.
+   */
   const [recemCriado, setRecemCriado] = useState<string | null>(null);
-  const aoCriar = useCallback((id: string, categoryId: string | null) => {
+  const aoCriar = useCallback((categoryId: string | null, mensagem: string) => {
     if (categoryId) setCatAtiva(categoryId);
     setNovo(false);
-    setEditando(id);
-    setRecemCriado(id);
+    setEditando(null);
+    setRecemCriado(mensagem);
   }, []);
   const [novaCategoria, setNovaCategoria] = useState(false);
 
@@ -137,6 +143,17 @@ export function EditorCardapio({
               </span>
             </div>
 
+            {/* A confirmação do item recém-criado: o formulário dele já fechou,
+                então ela precisa aparecer aqui, junto da lista onde ele entrou. */}
+            {recemCriado ? (
+              <p className="aviso aviso--ok">
+                ✓ {recemCriado}
+                <button type="button" className="aviso__fechar" onClick={() => setRecemCriado(null)} aria-label="Dispensar">
+                  ✕
+                </button>
+              </p>
+            ) : null}
+
             {grupo.pratos.length === 0 && !novo ? (
               <p className="painel-vazio">Nenhum item aqui ainda.</p>
             ) : null}
@@ -145,13 +162,7 @@ export function EditorCardapio({
               const esgotado = estaEsgotado(p);
               const faltas = faltasDe(p.id);
               return editando === p.id ? (
-                <FormPrato
-                  key={p.id}
-                  prato={p}
-                  grupos={grupos}
-                  recemCriado={recemCriado === p.id}
-                  onFechar={() => { setEditando(null); setRecemCriado(null); }}
-                />
+                <FormPrato key={p.id} prato={p} grupos={grupos} onFechar={() => setEditando(null)} />
               ) : (
                 <div className={`editor-item${p.ativo ? "" : " editor-item--off"}`} key={p.id}>
                   {p.midias[0] ? (
@@ -251,36 +262,36 @@ function Mover({
 }
 
 function FormPrato({
-  prato, categoriaId, grupos, onFechar, onCriado, recemCriado = false,
+  prato, categoriaId, grupos, onFechar, onCriado,
 }: {
   prato?: PratoView;
   categoriaId?: string | null;
   grupos: GrupoView[];
   onFechar: () => void;
-  /** Acabou de ser criado nesta tela: diz o que aconteceu e o que vem agora. */
-  recemCriado?: boolean;
-  /** Só no formulário de item novo: entrega o id assim que ele existe. */
-  onCriado?: (id: string, categoryId: string | null) => void;
+  /** Só no formulário de item novo: avisa que gravou, com a frase pronta. */
+  onCriado?: (categoryId: string | null, mensagem: string) => void;
 }) {
   const [desc, setDesc] = useState(prato?.descricao ?? "");
   const curta = desc.trim().length < DESCRICAO_MINIMA;
+  /**
+   * Fotos e vídeo do item que ainda não existe.
+   *
+   * Já estão no Storage — sobem assim que são escolhidos, para o Salvar não
+   * virar uma espera de um minuto — mas ainda não têm linha no banco. Vão
+   * junto no envio do formulário, e é o Salvar que grava tudo de uma vez.
+   */
+  const [midiasNovas, setMidiasNovas] = useState<MidiaPendente[]>([]);
   // As ações têm assinatura (estado, formData). Passá-las direto no `action=`
   // entrega só o formData no primeiro argumento e o salvar nunca acontece —
   // foi o que o teste contra o banco pegou.
   const [estado, acao] = useFormState<ActionState, FormData>(prato ? salvarPrato : criarPrato, {});
 
-  /**
-   * Criar o item abre a edição DELE na hora.
-   *
-   * Antes, "Adicionar" fechava o assunto: o item ia para a lista e a área de
-   * fotos e vídeo não existia, porque ela depende de um id que só passa a
-   * existir depois de gravar. O dono tinha que fechar o formulário, achar o
-   * item na lista e clicar em Editar para então subir a foto — três passos que
-   * ninguém adivinha, no produto cujo ponto inteiro é a foto e o vídeo.
-   */
+  /** Criado: o formulário fecha e o item aparece na lista, já completo. */
   useEffect(() => {
-    if (estado.criado) onCriado?.(estado.criado.id, estado.criado.categoryId);
-  }, [estado.criado, onCriado]);
+    // Com erro de mídia o item existe, mas o formulário NÃO fecha: a mensagem
+    // diz o que fazer, e fechar esconderia o problema.
+    if (estado.criado && estado.ok) onCriado?.(estado.criado.categoryId, estado.ok);
+  }, [estado.criado, estado.ok, onCriado]);
 
   return (
     <div className="editor-form">
@@ -385,31 +396,38 @@ function FormPrato({
          * não era o botão estar no lugar errado, era a tela não dizer de quem
          * ele é.
          */}
-        <div className="editor-form__salvar">
+        {/* No item novo, a área de mídia fica DENTRO do formulário, acima do
+            Salvar: é uma tela só, e um botão só no fim grava tudo. No item que
+            já existe ela fica fora, porque lá cada envio grava sozinho. */}
+        {!prato ? (
+          <>
+            <UploadMidia
+              destino={{ modo: "rascunho", pendentes: midiasNovas, onMudar: setMidiasNovas }}
+            />
+            <input type="hidden" name="midias" value={JSON.stringify(midiasNovas)} />
+          </>
+        ) : null}
+
+        <div className={`editor-form__salvar${prato ? " editor-form__salvar--fixo" : ""}`}>
           <div className="linha-acoes">
-            <button type="submit" className="bt bt--ouro">{prato ? "Salvar" : "Adicionar"}</button>
+            <button type="submit" className="bt bt--ouro">
+              {prato ? "Salvar" : "Adicionar ao cardápio"}
+            </button>
             <button type="button" className="bt" onClick={onFechar}>Cancelar</button>
           </div>
           <p className="contagem">
             {prato
               ? "Salva os dados acima. Fotos e vídeo gravam sozinhos no envio — não dependem deste botão."
-              : "Depois de adicionar, abre o espaço para enviar as fotos e o vídeo."}
+              : midiasNovas.length > 0
+                ? `Grava o item com ${midiasNovas.length} ${midiasNovas.length === 1 ? "mídia" : "mídias"}, de uma vez.`
+                : "Grava o item. Dá para adicionar foto e vídeo agora, aqui em cima, ou depois."}
           </p>
         </div>
       </form>
 
       {prato ? (
         <>
-          {/* A confirmação de "criado" morre junto com o formulário de item
-              novo, que é desmontado. Sem esta linha o cartão só muda sozinho e
-              o dono não sabe se gravou nem o que fazer em seguida. */}
-          {recemCriado ? (
-            <p className="aviso aviso--ok">
-              ✓ “{prato.nome}” está no cardápio. Agora a foto ou o vídeo — é o que faz o cliente pedir.
-            </p>
-          ) : null}
-
-          <UploadMidia dishId={prato.id} midias={prato.midias} />
+          <UploadMidia destino={{ modo: "prato", dishId: prato.id }} midias={prato.midias} />
 
           <div className="linha-acoes">
             <form action={alternarDestaque}>

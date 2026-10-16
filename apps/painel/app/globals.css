@@ -908,9 +908,15 @@ textarea.campo--curto { min-height: 92px; }
 /* A barra de salvar acompanha o rodapé da tela enquanto o formulário está
    aberto — em item com descrição e ingredientes o cartão passa da altura da
    tela, e o botão ficava fora de vista bem na hora de usá-lo. */
-.editor-form__salvar { position: sticky; bottom: 0; z-index: 2;
-  margin: 14px -14px -15px; padding: 11px 14px 13px;
+/* No CADASTRO a barra fica onde ela está: no fim, depois da mídia. Flutuando,
+   ela pousava em cima do seletor de arquivo — justamente a confusão de "o
+   botão aparece em cima" que esta tela veio resolver. */
+.editor-form__salvar { margin: 16px -14px -15px; padding: 13px 14px;
   border-top: 1px solid var(--cor-borda); background: var(--cor-papel-alto); }
+/* Na EDIÇÃO ela acompanha o rodapé da tela: lá o que vem depois dela grava
+   sozinho, então não há o que ela atropele. */
+.editor-form__salvar--fixo { position: sticky; bottom: 0; z-index: 2;
+  margin-bottom: -15px; padding-bottom: 13px; }
 .editor-form__salvar .linha-acoes { margin-top: 0; }
 .editor-form__salvar .contagem { margin: 7px 0 0; }
 
@@ -969,3 +975,15 @@ textarea.campo--curto { min-height: 92px; }
 .modo-quantas .harmo-chip { display: inline-flex; align-items: center; }
 /* O rádio dentro do chip usa .visually-hidden, que já vem dos tokens. */
 .modo-quantas .harmo-chip:focus-within { outline: 2px solid var(--cor-marca); outline-offset: 2px; }
+
+/* Confirmação do item recém-criado, acima da lista onde ele entrou. */
+.aviso--ok { display: flex; align-items: flex-start; gap: 12px; }
+.aviso__fechar { margin-left: auto; padding: 0 4px; border: 0; background: none; color: inherit;
+  font: inherit; line-height: 1; cursor: pointer; opacity: .65; }
+.aviso__fechar:hover { opacity: 1; }
+/* Qual mídia é a capa, no cadastro: lá não há setas para reordenar ainda.
+   Fica no alto à direita, para não brigar com o selo de "vídeo", que é no alto
+   à esquerda — as duas podem aparecer na mesma miniatura. */
+.midia-item__capa { position: absolute; top: 5px; right: 5px; padding: 2px 7px; border-radius: 999px;
+  background: var(--cor-marca); color: #fff; font-size: .56rem; font-weight: 800;
+  letter-spacing: .06em; text-transform: uppercase; }

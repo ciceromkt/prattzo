@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { brandingPath, mediaPath } from "@prattzo/core";
+import { brandingPath, mediaPath, rascunhoPath } from "@prattzo/core";
 import { requireRestaurant } from "@/lib/supabase";
 import { reportError } from "@/lib/log";
 
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       dishId?: string;
       tipo?: "foto" | "video";
       contentType?: string;
-      alvo?: "capa" | "logo" | "categoria";
+      alvo?: "capa" | "logo" | "categoria" | "rascunho";
     };
 
     if (!contentType || !EXT[contentType]) {
@@ -41,7 +41,12 @@ export async function POST(req: Request) {
 
     let path: string;
 
-    if (alvo === "capa" || alvo === "logo" || alvo === "categoria") {
+    if (alvo === "rascunho") {
+      // Item que ainda não existe: não há dishId para conferir, e não precisa —
+      // a pasta começa pelo id do restaurante, que é o que o Storage valida.
+      if (!tipo) return NextResponse.json({ erro: "Pedido inválido." }, { status: 400 });
+      path = rascunhoPath(restaurant.id, tipo, EXT[contentType]!);
+    } else if (alvo === "capa" || alvo === "logo" || alvo === "categoria") {
       // Logo e capa de categoria são imagem; a capa da casa é vídeo. Trocar um
       // pelo outro quebraria a tela.
       const ehVideo = contentType.startsWith("video/");
