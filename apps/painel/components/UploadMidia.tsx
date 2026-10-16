@@ -212,20 +212,10 @@ export function UploadMidia({
             <div className="midia-item" key={m.id}>
               <img src={m.tipo === "video" ? m.poster_url ?? m.url : m.url} alt="" />
               {m.tipo === "video" ? <span className="midia-item__selo">vídeo</span> : null}
+              {/* Ordem: ← → primeiro, ⤢ e ✕ depois. Em 74px de miniatura cabem
+                  dois botões por linha, e as setas são um par — separá-las em
+                  linhas diferentes faz procurar a segunda. */}
               <span className="midia-item__acoes">
-                {/* Reenquadrar o que já está no ar: as fotos antigas entraram
-                    com o corte automático, e recadastrar jogaria a capa do
-                    prato para o fim da fila. */}
-                {m.tipo === "foto" ? (
-                  <button
-                    type="button"
-                    className="bt bt--mini"
-                    onClick={() => setRecorte({ modo: "trocar", src: m.url, midiaId: m.id })}
-                    aria-label="Reenquadrar esta foto"
-                  >
-                    ⤢
-                  </button>
-                ) : null}
                 {(["cima", "baixo"] as const).map((dir) => (
                   <form action={moverMidia} key={dir}>
                     <input type="hidden" name="id" value={m.id} />
@@ -241,6 +231,19 @@ export function UploadMidia({
                     </button>
                   </form>
                 ))}
+                {/* Reenquadrar o que já está no ar: as fotos antigas entraram
+                    com o corte automático, e recadastrar jogaria a capa do
+                    prato para o fim da fila. */}
+                {m.tipo === "foto" ? (
+                  <button
+                    type="button"
+                    className="bt bt--mini"
+                    onClick={() => setRecorte({ modo: "trocar", src: m.url, midiaId: m.id })}
+                    aria-label="Reenquadrar esta foto"
+                  >
+                    ⤢
+                  </button>
+                ) : null}
                 <form action={excluirMidia}>
                   <input type="hidden" name="id" value={m.id} />
                   <button type="submit" className="bt bt--mini bt--perigo" aria-label="Remover">✕</button>

@@ -793,7 +793,13 @@ textarea.campo { min-height: 132px; resize: vertical; line-height: 1.55; }
 .midia-item { position: relative; width: 74px; }
 .midia-item img { width: 74px; height: 92px; object-fit: cover; border-radius: 8px; display: block; }
 .midia-item__selo { position: absolute; top: 5px; left: 5px; padding: 2px 6px; border-radius: 99px; background: rgba(0,0,0,.65); color: #fff; font-size: .58rem; font-weight: 700; }
-.midia-item__acoes { display: flex; gap: 2px; margin-top: 4px; }
+/* Os botões quebram em duas linhas em vez de vazarem da miniatura.
+   Três botões de ~32px não cabem em 74px: o ✕ saía para fora e ficava por
+   baixo do ⤢ da mídia seguinte, então o clique em "remover esta foto" caía em
+   "reenquadrar a outra". Com quatro botões (foto, que tem o ⤢) são duas
+   linhas de dois. */
+.midia-item__acoes { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 4px; }
+.midia-item__acoes > * { flex: 0 0 auto; }
 
 .bloco { margin-bottom: 26px; padding: 18px; border: 1px solid var(--cor-borda); border-radius: 12px; }
 .bloco h3 { margin: 0 0 8px; font-size: 1.05rem; }
@@ -951,18 +957,19 @@ textarea.campo--curto { min-height: 92px; }
   background: var(--cor-marca-fraca); color: var(--cor-marca);
   font-size: .62rem; font-weight: 800; letter-spacing: .08em; }
 
-/* A barra de salvar acompanha o rodapé da tela enquanto o formulário está
-   aberto — em item com descrição e ingredientes o cartão passa da altura da
-   tela, e o botão ficava fora de vista bem na hora de usá-lo. */
-/* No CADASTRO a barra fica onde ela está: no fim, depois da mídia. Flutuando,
-   ela pousava em cima do seletor de arquivo — justamente a confusão de "o
-   botão aparece em cima" que esta tela veio resolver. */
+/* A barra de salvar fica parada no fim do formulário, depois da mídia, nas
+   duas telas — cadastro e edição.
+   Já foi grudada no rodapé da janela, para não sair de vista num cartão mais
+   alto que a tela. Flutuando, ela pousa justamente em cima da área de fotos,
+   que é o passo seguinte: é a confusão de "o botão aparece em cima" que estas
+   telas vieram resolver. Ficar fora de vista num cartão alto é o preço, e é o
+   menor dos dois: o botão está onde o trabalho termina. */
 .editor-form__salvar { margin: 16px -14px -15px; padding: 13px 14px;
   border-top: 1px solid var(--cor-borda); background: var(--cor-papel-alto); }
-/* Na EDIÇÃO ela acompanha o rodapé da tela: lá o que vem depois dela grava
-   sozinho, então não há o que ela atropele. */
-.editor-form__salvar--fixo { position: sticky; bottom: 0; z-index: 2;
-  margin-bottom: -15px; padding-bottom: 13px; }
+/* Na edição ainda vêm "Sugerir no fechamento" e os botões de tirar/excluir
+   depois dela, então ela é uma faixa no meio do cartão e não o rodapé dele —
+   sem isto a margem negativa de baixo puxaria o que vem depois por cima. */
+.editor-form__salvar--meio { margin-bottom: 16px; border-bottom: 1px solid var(--cor-borda); }
 .editor-form__salvar .linha-acoes { margin-top: 0; }
 .editor-form__salvar .contagem { margin: 7px 0 0; }
 

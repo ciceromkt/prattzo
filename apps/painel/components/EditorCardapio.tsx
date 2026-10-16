@@ -445,9 +445,21 @@ function FormPrato({
     if (estado.criado && estado.ok) onCriado?.(estado.criado.categoryId, estado.ok);
   }, [estado.criado, estado.ok, onCriado]);
 
+  /**
+   * O Salvar do item que já existe fica FORA do formulário, preso a ele pelo
+   * `form=`.
+   *
+   * Porque ele precisa aparecer depois das fotos, e a área de fotos do item
+   * existente tem formulários próprios — as setas que reordenam e o ✕ que
+   * remove. Formulário dentro de formulário é HTML inválido: o navegador
+   * descarta o de dentro e aquelas setas passariam a salvar o item em vez de
+   * mover a foto. O `form=` põe o botão no fim da tela sem aninhar nada.
+   */
+  const idForm = prato ? `item-${prato.id}` : "item-novo";
+
   return (
     <div className="editor-form">
-      <form action={acao}>
+      <form action={acao} id={idForm}>
         <p className="editor-form__secao">Dados do item</p>
         {prato ? (
           <>
@@ -538,48 +550,55 @@ function FormPrato({
         {estado.erro ? <p className="contagem contagem--curta">{estado.erro}</p> : null}
         {estado.ok ? <p className="contagem">{estado.ok}</p> : null}
 
-        {/**
-         * A barra de salvar gruda no rodapé da tela enquanto este formulário
-         * está aberto — e diz o que ela salva.
-         *
-         * Antes ela ficava solta no meio do cartão, logo acima de "Fotos e
-         * vídeo", e parecia salvar só a etapa anterior. Parecia porque É: foto
-         * e vídeo gravam sozinhos no envio, e o Salvar nunca foi deles. O erro
-         * não era o botão estar no lugar errado, era a tela não dizer de quem
-         * ele é.
-         */}
-        {/* No item novo, a área de mídia fica DENTRO do formulário, acima do
-            Salvar: é uma tela só, e um botão só no fim grava tudo. No item que
-            já existe ela fica fora, porque lá cada envio grava sozinho. */}
+        {/* Item novo: a mídia vai DENTRO do formulário, porque ela ainda é
+            rascunho e viaja no mesmo envio. Aqui ela não tem setas nem ✕, que
+            é o que permite ficar aninhada. */}
         {!prato ? (
           <>
             <UploadMidia
               destino={{ modo: "rascunho", pendentes: midiasNovas, onMudar: setMidiasNovas }}
             />
             <input type="hidden" name="midias" value={JSON.stringify(midiasNovas)} />
+
+            <div className="editor-form__salvar">
+              <div className="linha-acoes">
+                <button type="submit" className="bt bt--ouro">Adicionar ao cardápio</button>
+                <button type="button" className="bt" onClick={onFechar}>Cancelar</button>
+              </div>
+              <p className="contagem">
+                {midiasNovas.length > 0
+                  ? `Grava o item com ${midiasNovas.length} ${midiasNovas.length === 1 ? "mídia" : "mídias"}, de uma vez.`
+                  : "Grava o item. Dá para adicionar foto e vídeo agora, aqui em cima, ou depois."}
+              </p>
+            </div>
           </>
         ) : null}
-
-        <div className={`editor-form__salvar${prato ? " editor-form__salvar--fixo" : ""}`}>
-          <div className="linha-acoes">
-            <button type="submit" className="bt bt--ouro">
-              {prato ? "Salvar" : "Adicionar ao cardápio"}
-            </button>
-            <button type="button" className="bt" onClick={onFechar}>Cancelar</button>
-          </div>
-          <p className="contagem">
-            {prato
-              ? "Salva os dados acima. Fotos e vídeo gravam sozinhos no envio — não dependem deste botão."
-              : midiasNovas.length > 0
-                ? `Grava o item com ${midiasNovas.length} ${midiasNovas.length === 1 ? "mídia" : "mídias"}, de uma vez.`
-                : "Grava o item. Dá para adicionar foto e vídeo agora, aqui em cima, ou depois."}
-          </p>
-        </div>
       </form>
 
       {prato ? (
         <>
           <UploadMidia destino={{ modo: "prato", dishId: prato.id }} midias={prato.midias} />
+
+          {/**
+           * O Salvar vem AQUI, depois das fotos, e não antes.
+           *
+           * A ordem da tela tem de ser a ordem do trabalho: preencher, pôr o
+           * vídeo, salvar. Antes ele ficava acima da área de mídia com uma
+           * frase explicando que foto e vídeo não dependiam dele — e explicar
+           * não resolve: quem acabou de subir um vídeo procura o botão embaixo,
+           * não em cima. Continua sendo verdade que a mídia grava sozinha no
+           * envio (vídeo de 20 MB não espera por botão), e quem diz isso é o
+           * selo na própria área de mídia, no lugar onde a dúvida nasce.
+           */}
+          <div className="editor-form__salvar editor-form__salvar--meio">
+            <div className="linha-acoes">
+              <button type="submit" form={idForm} className="bt bt--ouro">Salvar item</button>
+              <button type="button" className="bt" onClick={onFechar}>Cancelar</button>
+            </div>
+            <p className="contagem">
+              Salva o item. Nome, preço e descrição só entram com este botão.
+            </p>
+          </div>
 
           <div className="linha-acoes">
             <form action={alternarDestaque}>
