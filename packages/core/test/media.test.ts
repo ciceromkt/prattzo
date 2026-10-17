@@ -46,9 +46,17 @@ describe("duração do vídeo", () => {
 });
 
 describe("o que continua sendo recusado", () => {
-  it("arquivo pesado demais", () => {
-    const r = validateVideo(video({ size: MAX_VIDEO_BYTES + 1 }));
-    expect(r.ok).toBe(false);
+  it("arquivo acima do que o Storage aceita", () => {
+    expect(validateVideo(video({ size: MAX_VIDEO_BYTES + 1 })).ok).toBe(false);
+    // A mensagem tem de dizer o tamanho DELE e o que fazer, não só "comprima".
+    const r = validateVideo(video({ size: 64 * 1024 * 1024 }));
+    expect(r.errors.join(" ")).toContain("64 MB");
+    expect(r.errors.join(" ")).toContain("trecho mais curto");
+  });
+
+  it("vídeo de celular de 30 MB SOBE — era o que os 20 MB barravam", () => {
+    const r = validateVideo(video({ size: 30 * 1024 * 1024 }));
+    expect(r.ok).toBe(true);
   });
 
   it("formato que o navegador do cliente não toca", () => {
@@ -58,6 +66,18 @@ describe("o que continua sendo recusado", () => {
 });
 
 describe("avisos que não barram o envio", () => {
+  it("vídeo pesado avisa que o cliente vai esperar, mas sobe", () => {
+    const r = validateVideo(video({ size: 30 * 1024 * 1024 }));
+    expect(r.ok).toBe(true);
+    expect(r.warnings.join(" ")).toContain("30 MB");
+    expect(r.warnings.join(" ")).toContain("4G");
+  });
+
+  it("vídeo dentro do confortável não enche a tela de aviso", () => {
+    const r = validateVideo(video({ size: 6 * 1024 * 1024 }));
+    expect(r.warnings.join(" ")).not.toContain("pesado");
+  });
+
   it("vídeo deitado avisa, mas sobe", () => {
     const r = validateVideo(video({ width: 1920, height: 1080 }));
     expect(r.ok).toBe(true);

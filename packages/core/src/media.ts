@@ -11,7 +11,29 @@ export const VIDEO_SEGUNDOS_EXIBIDOS = 15;
 
 /** Acima disto o arquivo é recusado: não é vídeo de prato, é outra coisa. */
 export const MAX_VIDEO_SECONDS = 60;
-export const MAX_VIDEO_BYTES = 20 * 1024 * 1024;
+
+/**
+ * Teto do arquivo de vídeo: 50 MB.
+ *
+ * Não é um número escolhido — é o limite por arquivo do plano gratuito do
+ * Supabase, onde a mídia mora. Mandar mais que isso não é questão de afrouxar
+ * a validação: o Storage recusa.
+ *
+ * Eram 20 MB, e barrava vídeo de celular novo, que grava em bitrate alto e
+ * passa disso em poucos segundos. Quem baixou o vídeo do Instagram e não tem
+ * editor não tinha o que fazer com "comprima antes de enviar".
+ */
+export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+
+/**
+ * Acima disto o arquivo sobe, com aviso: quem paga a conta é o cliente.
+ *
+ * O cardápio serve o arquivo como ele é, e o celular do salão está no 4G.
+ * Os onze vídeos que já estão no ar têm 2,7 MB em média e abrem na hora; um
+ * de 40 MB faz o cliente olhar para um quadro parado. O aviso diz isso na
+ * hora do envio, quando ainda dá para escolher outro trecho.
+ */
+export const VIDEO_BYTES_CONFORTAVEL = 12 * 1024 * 1024;
 /** Teto do arquivo que SOBE como está: o logo da casa. */
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 
@@ -86,8 +108,18 @@ export function validateVideo(
   if (!(ALLOWED_VIDEO_TYPES as readonly string[]).includes(input.type)) {
     errors.push("Formato não aceito. Envie MP4, MOV ou WebM.");
   }
+  const mb = (n: number) => Math.round(n / 1024 / 1024);
   if (input.size > MAX_VIDEO_BYTES) {
-    errors.push(`Vídeo acima de ${Math.round(MAX_VIDEO_BYTES / 1024 / 1024)} MB. Comprima antes de enviar.`);
+    errors.push(
+      `Vídeo de ${mb(input.size)} MB. O limite é ${mb(MAX_VIDEO_BYTES)} MB — envie um trecho mais curto `
+      + `ou grave em qualidade menor (no iPhone: Ajustes › Câmera › Gravar vídeo › 1080p 30 fps).`,
+    );
+  } else if (input.size > VIDEO_BYTES_CONFORTAVEL) {
+    // Aviso, não erro: sobe, mas o dono precisa saber que o cliente espera.
+    warnings.push(
+      `Vídeo pesado (${mb(input.size)} MB). Ele sobe, mas no 4G do salão o cliente espera para ver. `
+      + "Um trecho de 10 a 15 segundos costuma ficar abaixo de 10 MB e abre na hora.",
+    );
   }
   if (input.durationSeconds !== undefined && input.durationSeconds > MAX_VIDEO_SECONDS + 0.5) {
     errors.push(
