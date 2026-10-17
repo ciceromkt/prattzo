@@ -393,6 +393,9 @@
 .selo-video { flex: 0 0 auto; padding: 1px 6px; border-radius: 999px;
   background: var(--cor-marca-fraca); color: var(--cor-marca);
   font-size: .6rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.selo-falta { flex: 0 0 auto; padding: 1px 6px; border-radius: 999px;
+  border: 1px solid var(--cor-alerta); color: var(--cor-alerta);
+  font-size: .6rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .ranking__numeros { grid-area: numeros; display: flex; gap: 16px; }
 .ranking__num { display: grid; text-align: right; }
 .ranking__num b { font-size: .95rem; font-weight: 720; font-variant-numeric: tabular-nums; }

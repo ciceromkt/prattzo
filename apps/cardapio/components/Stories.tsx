@@ -34,6 +34,14 @@ interface Props {
   harmonizacao: { modo: ModoHarmonizacao; max: number };
   onIdx: (i: number) => void;
   onFechar: () => void;
+  /**
+   * Chegou ao fim da categoria, ou voltou antes do primeiro prato dela.
+   *
+   * Quem decide o que vem depois é o cardápio, não os stories: a fila aqui é
+   * de uma categoria só, e só lá fora se sabe qual é a próxima.
+   */
+  onFimDaFila: () => void;
+  onInicioDaFila: () => void;
   onLista: (catId: string) => void;
   onCategoria: (g: MenuGroup) => void;
   onQuero: (p: Dish) => void;
@@ -46,7 +54,7 @@ interface Props {
 
 export function Stories({
   grupos, fila, idx, pedido, favoritos, restaurantId, paresPrato, paresCategoria, harmonizacao,
-  onIdx, onFechar, onLista, onCategoria, onQuero, onFavoritar, onCompartilhar,
+  onIdx, onFechar, onFimDaFila, onInicioDaFila, onLista, onCategoria, onQuero, onFavoritar, onCompartilhar,
   onAbrirPar, onQueroPar,
 }: Props) {
   const [pausado, setPausado] = useState(false);
@@ -93,8 +101,18 @@ export function Stories({
     if (passo > 0 && iMidia + 1 < midias.length) return setIMidia(iMidia + 1);
     if (passo < 0 && iMidia > 0) return setIMidia(iMidia - 1);
     const proximo = idx + passo;
-    if (proximo < 0) return;
-    if (proximo >= fila.length) return onFechar();
+    /**
+     * Fim da categoria não é fim do cardápio.
+     *
+     * Antes, o último prato de Entradas fechava os stories e jogava o cliente
+     * de volta na home — justo quem estava percorrendo o cardápio inteiro,
+     * que é o comportamento que se quer. Agora a categoria seguinte começa no
+     * primeiro prato dela, como num story que passa de um perfil para o
+     * próximo. Voltar do primeiro prato leva ao último da categoria anterior,
+     * pela mesma razão: o gesto tem de ser reversível.
+     */
+    if (proximo < 0) return onInicioDaFila();
+    if (proximo >= fila.length) return onFimDaFila();
     setIMidia(0);
     onIdx(proximo);
   };

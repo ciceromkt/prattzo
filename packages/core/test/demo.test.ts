@@ -113,10 +113,17 @@ describe("modo demonstração — os números têm de ser críveis", () => {
     expect(vistas[0]!).toBeGreaterThan(vistas[vistas.length - 1]! * 3);
   });
 
-  it("prato sem foto nem vídeo quase não é visto: o cardápio não o mostra", () => {
+  it("prato sem foto nem vídeo É visto — e quase ninguém o quer", () => {
+    // A fila dos stories é a categoria inteira: o prato sem mídia aparece com
+    // o aviso "Ainda sem foto nem vídeo". O defeito dele não é invisibilidade,
+    // é não converter — e é isso que a tela precisa mostrar.
     const pao = r.pratos.find((p) => p.dish_id === "d-pao")!;
     const picanha = r.pratos.find((p) => p.dish_id === "d-picanha")!;
-    expect(pao.vistas).toBeLessThan(picanha.vistas * 0.2);
+    expect(pao.vistas).toBeGreaterThan(0);
+    expect(pao.vistas).toBeGreaterThan(picanha.vistas * 0.1);
+    expect(taxaInteresse(pao.vistas, pao.quis)).toBeLessThan(6);
+    expect(taxaInteresse(pao.vistas, pao.quis))
+      .toBeLessThan(taxaInteresse(picanha.vistas, picanha.quis) / 3);
   });
 
   it("fim de semana tem mais movimento que segunda-feira", () => {

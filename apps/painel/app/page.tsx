@@ -95,6 +95,7 @@ export default async function Resultados({
         categoria: info.categoria,
         capa: capaDoPrato(prato),
         temVideo: videoDoPrato(prato) !== null,
+        semMidia: prato.midias.length === 0,
         vistas: p.vistas,
         quis: p.quis,
         vistasAntes: antes?.vistas ?? 0,

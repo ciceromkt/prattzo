@@ -10,6 +10,8 @@ export interface LinhaRanking {
   categoria: string;
   capa: string | null;
   temVideo: boolean;
+  /** Nem foto nem vídeo: o cliente passa por ele e não vê nada. */
+  semMidia: boolean;
   vistas: number;
   quis: number;
   vistasAntes: number;
@@ -87,6 +89,12 @@ export function RankingPratos({ linhas }: { linhas: readonly LinhaRanking[] }) {
                 <b className="ranking__nome">
                   {l.nome}
                   {l.temVideo ? <span className="selo-video" title="Tem vídeo">vídeo</span> : null}
+                  {/* Sem isto, uma taxa de 2% parece defeito do prato. O prato
+                      aparece na fila dos stories como um quadro vazio — não há
+                      o que desejar, e o número está certo. */}
+                  {l.semMidia
+                    ? <span className="selo-falta" title="Aparece no cardápio sem foto nem vídeo">sem mídia</span>
+                    : null}
                 </b>
                 <span className="ranking__cat">{l.categoria}</span>
               </span>

@@ -84,6 +84,46 @@ export function Cardapio({ menu }: { menu: PublicMenu }) {
   }, []);
 
   /**
+   * A travessia entre categorias dentro dos stories.
+   *
+   * A fila dos stories é de uma categoria por vez, porque as barrinhas no
+   * topo medem o progresso DELA — uma fila com o cardápio inteiro viraria
+   * trinta tracinhos ilegíveis. Mas acabar a categoria não é acabar o
+   * cardápio: quem percorreu Entradas até o fim está justamente no ritmo que
+   * se quer, e devolvê-lo à capa ali interrompe a visita no melhor momento.
+   *
+   * A categoria de referência é a do prato ABERTO, não a posição da fila: ela
+   * continua certa quando o cliente entrou por um prato harmonizado, que vem
+   * de outra categoria.
+   *
+   * Categoria vazia é pulada — ela não tem o que mostrar e pararia a travessia
+   * numa tela em branco.
+   */
+  const irParaCategoriaVizinha = useCallback(
+    (direcao: 1 | -1) => {
+      const atual = fila[idx];
+      const i = grupos.findIndex((g) => g.categoria.id === atual?.category_id);
+      if (i < 0) return setTela("capa");
+
+      for (let j = i + direcao; j >= 0 && j < grupos.length; j += direcao) {
+        const g = grupos[j]!;
+        if (g.pratos.length === 0) continue;
+        setFila(g.pratos);
+        // Indo para a frente começa no primeiro; voltando, no último — o gesto
+        // tem de desfazer exatamente o que o anterior fez.
+        setIdx(direcao > 0 ? 0 : g.pratos.length - 1);
+        track({ restaurantId: menu.restaurant.id, tipo: "abriu_categoria" });
+        return;
+      }
+
+      // Acabou o cardápio. Para a frente, volta para a capa, que é onde está o
+      // pedido; para trás, fica onde está, porque não há o que mostrar antes.
+      if (direcao > 0) setTela("capa");
+    },
+    [fila, idx, grupos, menu.restaurant.id],
+  );
+
+  /**
    * Abre um prato que veio da harmonização — quase sempre de outra categoria.
    *
    * A fila passa a ser a categoria DELE, não a de onde o cliente veio: ele
@@ -257,6 +297,8 @@ export function Cardapio({ menu }: { menu: PublicMenu }) {
           idx={idx}
           pedido={pedido}
           onIdx={setIdx}
+          onFimDaFila={() => irParaCategoriaVizinha(1)}
+          onInicioDaFila={() => irParaCategoriaVizinha(-1)}
           onFechar={() => setTela("capa")}
           onLista={(catId) => { setListaCat(catId); setLista(true); }}
           onCategoria={abrirCategoria}

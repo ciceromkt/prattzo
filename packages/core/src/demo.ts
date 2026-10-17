@@ -117,20 +117,27 @@ function perfilar(cat: CatalogoDemo): PerfilPrato[] {
     if (prato.destaque) apelo *= 1.4;
     // Quem está no fim do cardápio é visto menos: o cliente cansa antes.
     apelo *= 1 / (1 + posicao * 0.035);
+
     /**
-     * Sem foto nem vídeo, o apelo é ZERO — e não "quase zero".
+     * Sem foto nem vídeo o prato É visto — e é aí que está o problema.
      *
-     * Não é severidade: é o que o cardápio faz. A fila de stories só inclui
-     * quem tem o que mostrar (`filaDeStories`), então um item sem mídia nunca
-     * é aberto e nunca gera um `viu_prato`. Dar a ele um fiapo de movimento
-     * enchia a tela de linhas de ruído — inclusive pares com 6 exibições
-     * sendo julgados "rende pouco", o que não se sustenta.
+     * Chegei a zerá-lo, achando que a fila dos stories só incluía quem tem o
+     * que mostrar. Não é verdade: a fila é a categoria inteira, e o prato sem
+     * mídia aparece com o aviso "Ainda sem foto nem vídeo". O cliente passa
+     * por ele como passa pelos outros.
+     *
+     * Então ele recebe visualização, perde um pouco (quem cai num quadro vazio
+     * acelera ou desiste) e quase não converte: não se deseja o que não se vê.
+     * É exatamente esse retrato — muita vista, nenhum toque — que faz a tela
+     * acusar o problema de cadastro em vez de escondê-lo num zero.
      */
-    if (!comMidia) apelo = 0;
+    if (!comMidia) apelo *= 0.55;
 
     // Interesse entre 7% e 34%: abaixo disso o painel chamaria tudo de
     // problema, acima soaria propaganda. Vídeo melhora o fim da faixa.
-    const taxa = (0.07 + sorte(cat.restaurantId, prato.id, "taxa") * 0.21) * (comVideo ? 1.3 : 1);
+    const taxa = (0.07 + sorte(cat.restaurantId, prato.id, "taxa") * 0.21)
+      * (comVideo ? 1.3 : 1)
+      * (comMidia ? 1 : 0.12);
 
     const pares = harmonizacoes({
       grupos: cat.grupos,
@@ -186,10 +193,6 @@ function gerarDia(cat: CatalogoDemo, perfis: PerfilPrato[], data: Date, idade: n
   const porPar = new Map<string, { dish_id: string; alvo_id: string; exibicoes: number; cliques: number }>();
 
   for (const p of perfis) {
-    if (p.apelo <= 0) {
-      porPrato.set(p.prato.id, { vistas: 0, terminou: 0, quis: 0, compartilhou: 0 });
-      continue;
-    }
     /**
      * Cada prato tem a SUA tendência, entre -3% e +3% por semana.
      *
