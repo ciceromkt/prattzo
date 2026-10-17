@@ -51,7 +51,7 @@ function catalogo(): CatalogoDemo {
     grupos,
     paresPrato: [{ a_id: "d-picanha", b_id: "d-caipira", nota: "O limão corta a gordura.", ordem: 0 }] as never,
     paresCategoria: [{ a_id: "c-pratos", b_id: "c-drinks", ordem: 0 }] as never,
-    harmonizacao: { modo: "misto", max: 1 },
+    harmonizacao: { modo: "misto", max: 1, estilo: "cartao" },
   };
 }
 

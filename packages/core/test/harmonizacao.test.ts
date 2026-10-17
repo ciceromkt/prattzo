@@ -232,3 +232,58 @@ describe("quem escolhe: o modo da casa", () => {
     expect(r).toHaveLength(1);
   });
 });
+
+describe("estilo da harmonização", () => {
+  const drinkSemFoto = prato({
+    id: "d-aperol", nome: "Aperol Spritz", category_id: "c-drinks",
+    preco_min_centavos: 2700, midias: [],
+  });
+  const drinkComFoto = prato({
+    id: "d-perfeitinha", nome: "Perfeitinha", category_id: "c-drinks",
+    preco_min_centavos: 3300, ordem: 1,
+    midias: [midia({ id: "m-p", dish_id: "d-perfeitinha" })],
+  });
+  const picanha = prato({
+    id: "d-picanha", nome: "Picanha", category_id: "c-pratos",
+    preco_min_centavos: 12000, midias: [midia({ id: "m-pic", dish_id: "d-picanha" })],
+  });
+  const grupos = [
+    { categoria: categoria({ id: "c-pratos", nome: "Pratos", ordem: 0 }), pratos: [picanha] },
+    { categoria: categoria({ id: "c-drinks", nome: "Drinks", ordem: 1 }), pratos: [drinkSemFoto, drinkComFoto] },
+  ];
+  const entrada = {
+    grupos, prato: picanha,
+    paresPrato: [{ id: "x", a_id: "d-picanha", b_id: "d-aperol", nota: "O amargor corta a gordura.", ordem: 0 }],
+    paresCategoria: [],
+    modo: "curado" as const,
+    max: 2,
+  };
+
+  it("no cartão, item sem foto fica de fora: o cartão É a foto", () => {
+    const r = harmonizacoes({ ...entrada, estilo: "cartao" });
+    expect(r.map((h) => h.prato.id)).not.toContain("d-aperol");
+  });
+
+  it("em texto, o mesmo item entra — uma frase funciona sem foto", () => {
+    const r = harmonizacoes({ ...entrada, estilo: "texto" });
+    expect(r.map((h) => h.prato.id)).toContain("d-aperol");
+    expect(r.find((h) => h.prato.id === "d-aperol")?.nota).toContain("amargor");
+  });
+
+  it("o padrão continua sendo o cartão: quem não configurou nada não muda de comportamento", () => {
+    const comPadrao = harmonizacoes(entrada);
+    const comCartao = harmonizacoes({ ...entrada, estilo: "cartao" });
+    expect(comPadrao).toEqual(comCartao);
+  });
+
+  it("texto não afrouxa as outras regras: sem preço continua fora", () => {
+    const semPreco = prato({ id: "d-sem", nome: "Sem preço", category_id: "c-drinks", preco_min_centavos: 0, midias: [] });
+    const r = harmonizacoes({
+      ...entrada,
+      grupos: [grupos[0]!, { categoria: categoria({ id: "c-drinks", nome: "Drinks", ordem: 1 }), pratos: [semPreco] }],
+      paresPrato: [{ id: "y", a_id: "d-picanha", b_id: "d-sem", nota: "", ordem: 0 }],
+      estilo: "texto",
+    });
+    expect(r.map((h) => h.prato.id)).not.toContain("d-sem");
+  });
+});

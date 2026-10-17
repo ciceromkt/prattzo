@@ -92,6 +92,8 @@ export interface Restaurant {
   harmonizacao_modo: ModoHarmonizacao;
   /** Quantas sugestões aparecem dentro do prato: 1 ou 2. */
   harmonizacao_max: number;
+  /** Cartão com foto, ou só a frase. Decide também se o par precisa de mídia. */
+  harmonizacao_estilo: EstiloHarmonizacao;
   /** Resultados mostrando dados simulados. Só para contas autorizadas. */
   demo_resultados: boolean;
   publicado: boolean;
@@ -103,6 +105,15 @@ export interface Restaurant {
  * - `automatico`: só a regra de categoria — ele marca uma vez e não pensa mais.
  */
 export type ModoHarmonizacao = "curado" | "misto" | "automatico";
+
+/**
+ * Como a sugestão aparece dentro do prato.
+ *
+ * "cartao": miniatura, nome e preço — vende pelo olho, e por isso só aceita
+ * item COM foto. "texto": a frase do dono em uma linha, que funciona sem foto
+ * nenhuma e ocupa um quarto da altura sobre o vídeo.
+ */
+export type EstiloHarmonizacao = "cartao" | "texto";
 
 export interface MenuGroup {
   categoria: Category;

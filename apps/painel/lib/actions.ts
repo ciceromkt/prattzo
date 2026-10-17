@@ -566,16 +566,21 @@ export async function salvarModoHarmonizacao(_e: ActionState, fd: FormData): Pro
   const modo = texto(fd, "modo");
   if (!["curado", "misto", "automatico"].includes(modo)) return { erro: "Modo inválido." };
   const max = Number(texto(fd, "max")) === 2 ? 2 : 1;
+  const estilo = texto(fd, "estilo") === "texto" ? "texto" : "cartao";
 
   const { error } = await client
-    .from("restaurants").update({ harmonizacao_modo: modo, harmonizacao_max: max })
+    .from("restaurants")
+    .update({ harmonizacao_modo: modo, harmonizacao_max: max, harmonizacao_estilo: estilo })
     .eq("id", restaurant.id);
   if (error) {
     reportError("falha_salvar_modo_harmonizacao", error);
     return { erro: "Não deu para salvar." };
   }
   await atualiza(restaurant.slug);
-  return { ok: `Salvo. ${max === 1 ? "Uma sugestão" : "Duas sugestões"} por prato.` };
+  return {
+    ok: `Salvo. ${max === 1 ? "Uma sugestão" : "Duas sugestões"} por prato, `
+      + `${estilo === "texto" ? "em texto" : "com foto"}.`,
+  };
 }
 
 /** Par exato entre dois pratos, com a frase do dono. */

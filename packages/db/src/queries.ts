@@ -21,6 +21,7 @@ function toRestaurant(r: RestaurantRow): Restaurant {
     harmonizacao_modo: r.harmonizacao_modo === "curado" || r.harmonizacao_modo === "automatico"
       ? r.harmonizacao_modo : "misto",
     harmonizacao_max: r.harmonizacao_max === 2 ? 2 : 1,
+    harmonizacao_estilo: r.harmonizacao_estilo === "texto" ? "texto" : "cartao",
     demo_resultados: Boolean(r.demo_resultados),
     publicado: r.publicado,
   };

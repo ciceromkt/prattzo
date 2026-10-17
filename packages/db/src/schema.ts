@@ -16,6 +16,7 @@ export interface RestaurantRow {
   link_google: string | null;
   harmonizacao_modo: string | null;
   harmonizacao_max: number | null;
+  harmonizacao_estilo: string | null;
   demo_resultados: boolean | null;
   publicado: boolean;
   criado_em: string;

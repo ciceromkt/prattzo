@@ -26,7 +26,9 @@
  * aos dois sentidos — o dono cadastra uma vez.
  */
 
-import type { Dish, MenuGroup, ModoHarmonizacao, ParCategoria, ParPrato } from "./types";
+import type {
+  Dish, EstiloHarmonizacao, MenuGroup, ModoHarmonizacao, ParCategoria, ParPrato,
+} from "./types";
 import { estaEsgotado, temMidia } from "./menu";
 import { hasPrice } from "./price";
 
@@ -55,12 +57,21 @@ export interface EntradaHarmonizacao {
   /** Quem escolhe. O dono decide isto no painel; o padrão é o dos dois. */
   modo?: ModoHarmonizacao;
   max?: number;
+  /**
+   * Como a sugestão vai aparecer — e, por tabela, se o item precisa de foto.
+   *
+   * No cartão a foto É o cartão, então quem não tem mídia fica de fora. Na
+   * frase não há o que ficar vazio, e exigir foto ali apenas esconderia
+   * combinações boas: um drink sem foto cadastrada continua combinando com a
+   * picanha.
+   */
+  estilo?: EstiloHarmonizacao;
   agora?: Date;
 }
 
 export function harmonizacoes({
   grupos, prato, paresPrato, paresCategoria, pedido = {},
-  modo = "misto", max = 1, agora = new Date(),
+  modo = "misto", max = 1, estilo = "cartao", agora = new Date(),
 }: EntradaHarmonizacao): Harmonizacao[] {
   const porId = new Map<string, { prato: Dish; categoria: string }>();
   for (const g of grupos) {
@@ -76,7 +87,8 @@ export function harmonizacoes({
     p.id !== prato.id
     && (pedido[p.id] ?? 0) === 0
     && !estaEsgotado(p, agora)
-    && temMidia(p)
+    // Só o cartão precisa de foto — ver `estilo`, acima.
+    && (estilo === "texto" || temMidia(p))
     && hasPrice(p);
 
   const saida: Harmonizacao[] = [];

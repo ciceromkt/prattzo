@@ -63,6 +63,7 @@ export default async function PaginaHarmonizacao() {
         opcoes={opcoes}
         modo={dados.restaurant.harmonizacao_modo}
         max={dados.restaurant.harmonizacao_max}
+        estilo={dados.restaurant.harmonizacao_estilo}
       />
     </Casca>
   );

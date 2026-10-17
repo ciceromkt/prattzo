@@ -32,14 +32,16 @@ import type {
   DiaPeriodo, ParPeriodo, PratoPeriodo, Resultados, ResumoPeriodo,
 } from "./resultados";
 import { RESUMO_ZERO } from "./resultados";
-import type { Dish, MenuGroup, ModoHarmonizacao, ParCategoria, ParPrato } from "./types";
+import type {
+  Dish, EstiloHarmonizacao, MenuGroup, ModoHarmonizacao, ParCategoria, ParPrato,
+} from "./types";
 
 export interface CatalogoDemo {
   restaurantId: string;
   grupos: readonly MenuGroup[];
   paresPrato: readonly ParPrato[];
   paresCategoria: readonly ParCategoria[];
-  harmonizacao: { modo: ModoHarmonizacao; max: number };
+  harmonizacao: { modo: ModoHarmonizacao; max: number; estilo: EstiloHarmonizacao };
 }
 
 /** Quantos dias de história o gerador mantém. 90 para ver + 90 para comparar. */
@@ -146,6 +148,7 @@ function perfilar(cat: CatalogoDemo): PerfilPrato[] {
       paresCategoria: cat.paresCategoria,
       modo: cat.harmonizacao.modo,
       max: cat.harmonizacao.max,
+      estilo: cat.harmonizacao.estilo,
     }).map((h) => h.prato.id);
 
     return { prato, apelo, taxa: Math.min(taxa, 0.42), pares, temVideo: comVideo };

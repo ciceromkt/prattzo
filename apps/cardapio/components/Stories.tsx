@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Dish, MenuGroup, ModoHarmonizacao, ParCategoria, ParPrato } from "@prattzo/core";
+import type {
+  Dish, EstiloHarmonizacao, MenuGroup, ModoHarmonizacao, ParCategoria, ParPrato,
+} from "@prattzo/core";
 import {
   capaDoPrato, estaEsgotado, harmonizacoes, midiasDoPrato, posterUtil, priceLabel, VIDEO_SEGUNDOS_EXIBIDOS,
 } from "@prattzo/core";
@@ -31,7 +33,7 @@ interface Props {
   paresPrato: ParPrato[];
   paresCategoria: ParCategoria[];
   /** Como a casa configurou a harmonização, no painel. */
-  harmonizacao: { modo: ModoHarmonizacao; max: number };
+  harmonizacao: { modo: ModoHarmonizacao; max: number; estilo: EstiloHarmonizacao };
   onIdx: (i: number) => void;
   onFechar: () => void;
   /**
@@ -83,10 +85,11 @@ export function Stories({
     () => (prato
       ? harmonizacoes({
           grupos, prato, paresPrato, paresCategoria, pedido,
-          modo: harmonizacao.modo, max: harmonizacao.max,
+          modo: harmonizacao.modo, max: harmonizacao.max, estilo: harmonizacao.estilo,
         })
       : []),
-    [grupos, prato, paresPrato, paresCategoria, pedido, harmonizacao.modo, harmonizacao.max],
+    [grupos, prato, paresPrato, paresCategoria, pedido,
+     harmonizacao.modo, harmonizacao.max, harmonizacao.estilo],
   );
 
   /**
@@ -390,6 +393,7 @@ export function Stories({
           {pares.length > 0 ? (
             <Harmoniza
               pares={pares}
+              estilo={harmonizacao.estilo}
               pedido={pedido}
               onAbrir={(p) => cliqueNoPar(p, onAbrirPar)}
               onQuero={(p) => cliqueNoPar(p, onQueroPar)}
@@ -481,13 +485,61 @@ function Galeria({
  * decidiu e não quer sair da tela.
  */
 function Harmoniza({
-  pares, pedido, onAbrir, onQuero,
+  pares, estilo, pedido, onAbrir, onQuero,
 }: {
   pares: ReturnType<typeof harmonizacoes>;
+  estilo: EstiloHarmonizacao;
   pedido: Record<string, number>;
   onAbrir: (p: Dish) => void;
   onQuero: (p: Dish) => void;
 }) {
+  /**
+   * Duas formas da MESMA oferta, e a casa escolhe no painel.
+   *
+   * O cartão vende pelo olho: miniatura, nome, preço. Custa altura em cima do
+   * vídeo, e exige que o item sugerido tenha foto — por isso a regra de
+   * harmonização descarta quem não tem.
+   *
+   * A frase vende pela palavra. Ocupa uma linha, deixa o vídeo respirar, e
+   * aceita item sem foto nenhuma: é o único jeito de um drink que a casa
+   * ainda não fotografou poder ser sugerido. Para casas cujo forte é o texto
+   * do dono — "o limão corta a gordura" —, costuma ler melhor que a vitrine.
+   */
+  if (estilo === "texto") {
+    return (
+      <section className="harmoniza harmoniza--texto" aria-label="Harmoniza com">
+        {pares.map(({ prato, motivo, nota }) => {
+          const jaTem = (pedido[prato.id] ?? 0) > 0;
+          return (
+            <p className="harmoniza-linha" key={prato.id}>
+              <button
+                type="button"
+                className="harmoniza-linha__corpo"
+                onClick={() => onAbrir(prato)}
+                aria-label={`Ver ${prato.nome}`}
+              >
+                <span className="harmoniza-linha__rotulo">{motivo}</span>{" "}
+                <strong className="harmoniza-linha__nome">{prato.nome}</strong>
+                <span className="harmoniza-linha__preco">{priceLabel(prato)}</span>
+                {/* A frase do dono é a harmonização. Sem ela, a linha é só um
+                    nome solto e não explica por que aquilo combina. */}
+                {nota ? <span className="harmoniza-linha__nota">{nota}</span> : null}
+              </button>
+              <button
+                type="button"
+                className={`harmoniza__add${jaTem ? " harmoniza__add--feito" : ""}`}
+                onClick={() => onQuero(prato)}
+                aria-label={`Somar ${prato.nome} ao pedido`}
+              >
+                {jaTem ? "✓" : "+"}
+              </button>
+            </p>
+          );
+        })}
+      </section>
+    );
+  }
+
   const comFrase = pares.filter((h) => h.nota);
   return (
     <section className="harmoniza" aria-label="Harmoniza com">

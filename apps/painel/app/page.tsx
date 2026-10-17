@@ -53,6 +53,7 @@ export default async function Resultados({
         harmonizacao: {
           modo: menu.restaurant.harmonizacao_modo,
           max: menu.restaurant.harmonizacao_max,
+          estilo: menu.restaurant.harmonizacao_estilo,
         },
       }, dias)
     : await getResultados(client, restaurant.id, dias);
@@ -67,6 +68,9 @@ export default async function Resultados({
             grupos, prato: p,
             paresPrato: menu.paresPrato, paresCategoria: menu.paresCategoria,
             modo: menu.restaurant.harmonizacao_modo, max: menu.restaurant.harmonizacao_max,
+            // O mesmo estilo do cardápio: em texto, pratos sem foto também
+            // harmonizam, e a recomendação tem de falar do que está no ar.
+            estilo: menu.restaurant.harmonizacao_estilo,
           }).map((h) => h.prato.id)
         : [],
     ]),

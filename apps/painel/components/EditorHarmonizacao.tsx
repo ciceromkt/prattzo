@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useFormState } from "react-dom";
 import { casadasCom } from "@prattzo/core";
-import type { ModoHarmonizacao, ParCategoria } from "@prattzo/core";
+import type { EstiloHarmonizacao, ModoHarmonizacao, ParCategoria } from "@prattzo/core";
 import {
   criarParPrato, excluirParPrato, salvarModoHarmonizacao, salvarParesCategoria, type ActionState,
 } from "@/lib/actions";
@@ -41,7 +41,7 @@ export interface PratoOpcao {
  * decisões antes de mostrar resultado garante que ninguém termina.
  */
 export function EditorHarmonizacao({
-  categorias, paresCategoria, paresPrato, opcoes, modo, max,
+  categorias, paresCategoria, paresPrato, opcoes, modo, max, estilo,
 }: {
   categorias: CategoriaView[];
   paresCategoria: ParCategoria[];
@@ -49,10 +49,11 @@ export function EditorHarmonizacao({
   opcoes: PratoOpcao[];
   modo: ModoHarmonizacao;
   max: number;
+  estilo: EstiloHarmonizacao;
 }) {
   return (
     <>
-      <Comando modo={modo} max={max} />
+      <Comando modo={modo} max={max} estilo={estilo} />
       <QuadroCategorias categorias={categorias} pares={paresCategoria} />
       <ParesExatos pares={paresPrato} opcoes={opcoes} />
     </>
@@ -87,10 +88,15 @@ const MODOS: Array<{ id: ModoHarmonizacao; nome: string; texto: string }> = [
  * Os três modos não mudam de onde vem a sugestão — ela é sempre sua, escrita
  * aqui. O que muda é quanto trabalho você quer ter.
  */
-function Comando({ modo, max }: { modo: ModoHarmonizacao; max: number }) {
+function Comando({
+  modo, max, estilo,
+}: {
+  modo: ModoHarmonizacao; max: number; estilo: EstiloHarmonizacao;
+}) {
   const [estado, acao] = useFormState<ActionState, FormData>(salvarModoHarmonizacao, {});
   const [escolhido, setEscolhido] = useState<ModoHarmonizacao>(modo);
   const [quantas, setQuantas] = useState(max);
+  const [forma, setForma] = useState<EstiloHarmonizacao>(estilo);
 
   return (
     <form action={acao} className="bloco">
@@ -134,6 +140,35 @@ function Comando({ modo, max }: { modo: ModoHarmonizacao; max: number }) {
         Uma é o padrão, e é o que recomendo: uma sugestão lê como conselho da casa, duas leem como
         vitrine — e o segundo cartão empurra o “Quero esse” para baixo. Mas quem conhece o salão é
         você, e em Resultados dá para ver quantas sugestões foram vistas e quantas viraram pedido.
+      </p>
+
+      <p className="campo-rotulo modo-quantas__titulo">Como a sugestão aparece</p>
+      <div className="modo-quantas">
+        {([
+          { id: "cartao" as const, rotulo: "Com foto" },
+          { id: "texto" as const, rotulo: "Só texto" },
+        ]).map((f) => (
+          <label className={`harmo-chip${forma === f.id ? " harmo-chip--on" : ""}`} key={f.id}>
+            <input
+              type="radio"
+              name="estilo"
+              value={f.id}
+              checked={forma === f.id}
+              onChange={() => setForma(f.id)}
+              className="visually-hidden"
+            />
+            {f.rotulo}
+          </label>
+        ))}
+      </div>
+      <p className="contagem">
+        {forma === "cartao"
+          ? "Cartão com miniatura, nome e preço — vende pelo olho. Ocupa mais altura em cima do "
+            + "vídeo, e só aceita item que já tenha foto cadastrada: um cartão de imagem sem "
+            + "imagem fica vazio."
+          : "Uma linha com o nome, o preço e a sua frase. O vídeo respira, e — isto é o que mais "
+            + "muda — passa a aceitar item SEM foto. Hoje um drink que você ainda não fotografou "
+            + "não pode ser sugerido, por melhor que combine."}
       </p>
 
       {estado.erro ? <p className="contagem contagem--curta">{estado.erro}</p> : null}

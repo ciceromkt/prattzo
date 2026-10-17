@@ -312,6 +312,7 @@ export function Cardapio({ menu }: { menu: PublicMenu }) {
           harmonizacao={{
             modo: menu.restaurant.harmonizacao_modo,
             max: menu.restaurant.harmonizacao_max,
+            estilo: menu.restaurant.harmonizacao_estilo,
           }}
           onAbrirPar={abrirHarmonizado}
           /* O evento do par sai de dentro do Stories, que sabe de qual prato
