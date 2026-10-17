@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
-  Category, Dish, MediaItem, ParCategoria, ParPrato, PublicMenu, Restaurant,
+  Category, DiaPeriodo, Dish, MediaItem, ParCategoria, ParPeriodo, ParPrato,
+  PratoPeriodo, PublicMenu, Restaurant, Resultados, ResumoPeriodo,
 } from "@prattzo/core";
 import { montarGrupos } from "@prattzo/core";
 import type {
@@ -20,6 +21,7 @@ function toRestaurant(r: RestaurantRow): Restaurant {
     harmonizacao_modo: r.harmonizacao_modo === "curado" || r.harmonizacao_modo === "automatico"
       ? r.harmonizacao_modo : "misto",
     harmonizacao_max: r.harmonizacao_max === 2 ? 2 : 1,
+    demo_resultados: Boolean(r.demo_resultados),
     publicado: r.publicado,
   };
 }
@@ -167,6 +169,8 @@ export interface EventoEntrada {
   sessao: string;
   tipo: EventType;
   dishId?: string | null;
+  /** O outro lado do par, nos eventos de harmonização. */
+  alvoId?: string | null;
   ms?: number | null;
 }
 
@@ -178,6 +182,7 @@ export async function registrarEventos(db: SupabaseClient, eventos: readonly Eve
       sessao: e.sessao,
       tipo: e.tipo,
       dish_id: e.dishId ?? null,
+      alvo_id: e.alvoId ?? null,
       ms: e.ms ?? null,
     })),
   );
@@ -185,4 +190,68 @@ export async function registrarEventos(db: SupabaseClient, eventos: readonly Eve
 
 export async function apagarDadosSessao(db: SupabaseClient, sessao: string): Promise<void> {
   await db.rpc("apagar_dados_sessao", { p_sessao: sessao });
+}
+
+/* ------------------------------------------------------------- Resultados */
+
+/**
+ * Os números reais de uma janela, na MESMA forma que o modo demonstração
+ * devolve — ver `resultadosDemo` em @prattzo/core.
+ *
+ * As sete chamadas vão juntas de propósito: são independentes, e em série
+ * somariam sete idas ao banco na frente do dono esperando a tela.
+ *
+ * O período anterior é a mesma função com `p_desloc = dias`. Um só lugar
+ * define o recorte, então os dois lados da comparação nunca medem coisas
+ * diferentes — que é o jeito clássico de um painel mentir sem querer.
+ */
+export async function getResultados(
+  db: SupabaseClient, restaurantId: string, dias: number,
+): Promise<Resultados> {
+  const janela = Math.max(1, Math.min(Math.round(dias), 90));
+  const chamar = <T>(fn: string, args: Record<string, unknown>) =>
+    db.rpc(fn, args).then(({ data }) => (data ?? []) as T[]);
+
+  const [resumo, anterior, pratos, pratosAnterior, pares, paresAnterior, serie] = await Promise.all([
+    chamar<ResumoPeriodo>("resumo_periodo", { p_restaurant: restaurantId, p_dias: janela, p_desloc: 0 }),
+    chamar<ResumoPeriodo>("resumo_periodo", { p_restaurant: restaurantId, p_dias: janela, p_desloc: janela }),
+    chamar<PratoPeriodo>("pratos_periodo", { p_restaurant: restaurantId, p_dias: janela, p_desloc: 0 }),
+    chamar<PratoPeriodo>("pratos_periodo", { p_restaurant: restaurantId, p_dias: janela, p_desloc: janela }),
+    chamar<ParPeriodo>("pares_periodo", { p_restaurant: restaurantId, p_dias: janela, p_desloc: 0 }),
+    chamar<ParPeriodo>("pares_periodo", { p_restaurant: restaurantId, p_dias: janela, p_desloc: janela }),
+    chamar<DiaPeriodo>("serie_periodo", { p_restaurant: restaurantId, p_dias: janela }),
+  ]);
+
+  const n = (v: unknown) => (typeof v === "number" ? v : Number(v ?? 0));
+  // O Postgres devolve bigint como texto no JSON: sem isto, "12" + "5" = "125"
+  // em qualquer soma feita na tela.
+  const limpaResumo = (r?: ResumoPeriodo): ResumoPeriodo => ({
+    visitas: n(r?.visitas), pratos_vistos: n(r?.pratos_vistos), quero: n(r?.quero),
+    harmonizacao_vistas: n(r?.harmonizacao_vistas), harmonizacao_cliques: n(r?.harmonizacao_cliques),
+    compartilhamentos: n(r?.compartilhamentos), pedidos_fechados: n(r?.pedidos_fechados),
+    sugestoes_vistas: n(r?.sugestoes_vistas), sugestoes_aceitas: n(r?.sugestoes_aceitas),
+  });
+  const limpaPratos = (ps: PratoPeriodo[]): PratoPeriodo[] => ps.map((p) => ({
+    dish_id: p.dish_id, vistas: n(p.vistas), terminou: n(p.terminou),
+    quis: n(p.quis), compartilhou: n(p.compartilhou),
+    ms_medio: p.ms_medio == null ? null : n(p.ms_medio),
+  }));
+  const limpaPares = (ps: ParPeriodo[]): ParPeriodo[] => ps.map((p) => ({
+    dish_id: p.dish_id, alvo_id: p.alvo_id, exibicoes: n(p.exibicoes), cliques: n(p.cliques),
+  }));
+
+  return {
+    dias: janela,
+    demo: false,
+    resumo: limpaResumo(resumo[0]),
+    anterior: limpaResumo(anterior[0]),
+    pratos: limpaPratos(pratos),
+    pratosAnterior: limpaPratos(pratosAnterior),
+    pares: limpaPares(pares),
+    paresAnterior: limpaPares(paresAnterior),
+    serie: serie.map((d) => ({
+      dia: String(d.dia), visitas: n(d.visitas), vistas: n(d.vistas),
+      quero: n(d.quero), harmonizacao: n(d.harmonizacao),
+    })),
+  };
 }

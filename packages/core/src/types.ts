@@ -92,6 +92,8 @@ export interface Restaurant {
   harmonizacao_modo: ModoHarmonizacao;
   /** Quantas sugestões aparecem dentro do prato: 1 ou 2. */
   harmonizacao_max: number;
+  /** Resultados mostrando dados simulados. Só para contas autorizadas. */
+  demo_resultados: boolean;
   publicado: boolean;
 }
 

@@ -7,6 +7,7 @@ import {
 } from "@prattzo/core";
 import { reordenar as reordenarLocal } from "@prattzo/core";
 import { requireRestaurant, requireUser } from "./supabase";
+import { podeDemonstrar } from "./demo";
 import { reportError } from "./log";
 
 export interface ActionState {
@@ -710,3 +711,18 @@ export async function sair(): Promise<void> {
   redirect("/entrar");
 }
 
+
+/**
+ * Liga e desliga o modo demonstração.
+ *
+ * A confirmação de quem pode é refeita AQUI, no servidor, e não só na tela
+ * que mostra o interruptor: esconder o botão não impede ninguém de chamar a
+ * ação. Fora da lista autorizada o pedido é ignorado em silêncio.
+ */
+export async function alternarDemo(fd: FormData): Promise<void> {
+  const { client, restaurant } = await requireRestaurant();
+  if (!podeDemonstrar(restaurant.slug)) return;
+  const ligar = fd.get("ligar") === "true";
+  await client.from("restaurants").update({ demo_resultados: ligar }).eq("id", restaurant.id);
+  revalidatePath("/");
+}

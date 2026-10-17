@@ -273,38 +273,180 @@
   margin: 0 0 16px;
 }
 
-/* ---------------------------------------------------------------- métricas */
-.metricas {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-  margin-bottom: 26px;
-}
+/* ================================================================ RESULTADOS
+   O painel de inteligência comercial. Tudo aqui obedece a uma regra: o dono
+   precisa entender os números principais em poucos segundos, então o que não
+   ajuda a isso não entra na tela. */
 
-.metrica {
-  padding: 16px 18px;
-  background: var(--cor-papel-alto);
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio-m);
-}
+/* --------------------------------------------------------- modo demonstração
+   O aviso é permanente enquanto o modo está ligado — quem chega depois, ou
+   olha por cima do ombro, tem de saber que os números são simulados. */
+.faixa-demo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin-bottom: 16px; padding: 10px 14px; border: 1px solid var(--cor-marca);
+  border-radius: var(--raio-m); background: var(--cor-marca-fraca); }
+.faixa-demo--off { margin: 0 0 0 auto; padding: 0; border: 0; background: none; }
+.faixa-demo__selo { flex: 0 0 auto; padding: 3px 9px; border-radius: 999px;
+  background: var(--cor-marca); color: var(--cor-papel);
+  font-size: .64rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.faixa-demo__txt { flex: 1; min-width: 200px; font-size: .78rem; line-height: 1.45;
+  color: var(--cor-tinta-media); }
+.faixa-demo .bt { margin-left: auto; }
 
-.metrica__valor {
-  font-size: 1.9rem;
-  font-weight: 760;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.1;
-}
+/* ------------------------------------------------------------------ período */
+.periodo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 18px; }
 
-.metrica__rotulo {
-  margin-top: 4px;
-  font-size: 0.82rem;
-  color: var(--cor-tinta-media);
-}
+.chip-ordem { padding: 7px 13px; border: 1px solid var(--cor-borda); border-radius: 999px;
+  background: var(--cor-papel-alto); color: var(--cor-tinta-media);
+  font: inherit; font-size: .8rem; font-weight: 600; text-decoration: none; cursor: pointer; }
+.chip-ordem:hover { border-color: var(--cor-borda-forte); }
+.chip-ordem--ativo { background: var(--cor-tinta); border-color: var(--cor-tinta); color: var(--cor-papel); }
 
-.metrica__detalhe {
-  margin-top: 8px;
-  font-size: 0.78rem;
-  color: var(--cor-tinta-fraca);
+/* --------------------------------------------------------------- indicadores */
+.indicadores { display: grid; grid-template-columns: repeat(auto-fit, minmax(228px, 1fr));
+  gap: 12px; margin-bottom: 18px; }
+.indicador { display: grid; gap: 2px; padding: 15px 16px; background: var(--cor-papel-alto);
+  border: 1px solid var(--cor-borda); border-radius: var(--raio-m); }
+.indicador__valor { font-size: 1.75rem; font-weight: 760; line-height: 1.1;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.indicador__rotulo { font-size: .8rem; font-weight: 600; color: var(--cor-tinta-media); }
+.indicador__nota { margin-top: 2px; font-size: .71rem; font-style: normal; color: var(--cor-tinta-fraca); }
+
+/* A variação. A cor é reforço: quem decide são a seta e o sinal, porque o par
+   de cores de subir/descer é indistinguível em boa parte dos daltonismos. */
+.delta { display: inline-flex; align-items: baseline; gap: 3px; margin-top: 5px;
+  font-size: .74rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.delta--sobe { color: var(--grafico-sobe); }
+.delta--desce { color: var(--grafico-desce); }
+.delta--igual, .delta--sem { color: var(--cor-tinta-fraca); font-weight: 600; }
+.delta--miudo { margin-top: 0; font-size: .7rem; }
+.delta__ref { font-weight: 500; color: var(--cor-tinta-fraca); }
+
+/* ----------------------------------------------------------------- seções   */
+.secao-res { margin-top: 30px; }
+.secao-res__cabeca { margin-bottom: 12px; }
+.secao-res__titulo { font-size: 1.04rem; font-weight: 720; letter-spacing: -0.01em; }
+.secao-res__dica { margin: 3px 0 0; font-size: .76rem; color: var(--cor-tinta-fraca); }
+
+.resumo-cardapio { margin: 0 0 4px; padding: 15px 17px; border-left: 3px solid var(--cor-marca);
+  border-radius: 0 var(--raio-m) var(--raio-m) 0; background: var(--cor-papel-alto);
+  font-size: .92rem; line-height: 1.6; color: var(--cor-tinta-media); }
+
+.vazio-suave { margin: 0; padding: 22px; border: 1px dashed var(--cor-borda);
+  border-radius: var(--raio-m); font-size: .84rem; line-height: 1.55; color: var(--cor-tinta-fraca); }
+
+/* ------------------------------------------------------- gráficos (evolução)
+   Três gráficos pequenos em vez de um com três linhas: as medidas vivem em
+   escalas diferentes, e juntá-las exigiria um segundo eixo — a maneira mais
+   comum de um gráfico enganar sem mentir. O eixo do tempo é o mesmo nos três,
+   que é o que permite ler um dia nos três de uma vez. */
+.evolucao { display: grid; gap: 14px; padding: 16px; background: var(--cor-papel-alto);
+  border: 1px solid var(--cor-borda); border-radius: var(--raio-m); }
+.evolucao__bloco { margin: 0; display: grid; gap: 5px; }
+.evolucao__cabeca { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+.evolucao__titulo { font-size: .8rem; font-weight: 650; color: var(--cor-tinta-media); }
+.evolucao__valor { font-size: 1rem; font-weight: 740; font-variant-numeric: tabular-nums; }
+.evolucao__unidade { font-size: .72rem; font-weight: 500; color: var(--cor-tinta-fraca); }
+.evolucao__svg { display: block; width: 100%; height: 76px; overflow: visible; }
+.evolucao__area { fill: var(--grafico-sobe); opacity: .14; }
+.evolucao__linha { fill: none; stroke: var(--grafico-sobe); stroke-width: 2;
+  /* O SVG é esticado na horizontal; sem isto a espessura da linha estica junto. */
+  vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.evolucao__cursor { stroke: var(--cor-tinta-fraca); stroke-width: 1; stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke; }
+.evolucao__ponto { fill: var(--grafico-sobe); stroke: var(--cor-papel-alto); stroke-width: 2;
+  vector-effect: non-scaling-stroke; }
+.evolucao__nota { font-size: .68rem; color: var(--cor-tinta-fraca); }
+.evolucao__eixo { display: flex; align-items: center; justify-content: space-between;
+  padding-top: 6px; border-top: 1px solid var(--cor-borda);
+  font-size: .7rem; font-variant-numeric: tabular-nums; color: var(--cor-tinta-fraca); }
+.evolucao__dia { color: var(--cor-tinta); font-weight: 700; }
+.evolucao__dica { font-style: italic; }
+
+/* ---------------------------------------------------- ganhou/perdeu interesse */
+.variacoes { display: grid; gap: 3px; margin: 0; padding: 0; list-style: none; }
+.variacoes__linha { display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+  background: var(--cor-papel-alto); border: 1px solid var(--cor-borda); border-radius: 10px;
+  font-size: .84rem; }
+.variacoes__nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; font-weight: 600; }
+.variacoes__de-para { flex: 0 0 auto; font-size: .76rem; font-variant-numeric: tabular-nums;
+  color: var(--cor-tinta-fraca); }
+
+/* ----------------------------------------------------------------- ranking   */
+.ordenar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+
+.ranking { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.ranking__linha { display: grid; align-items: center; gap: 4px 11px;
+  grid-template-columns: 22px 46px minmax(0, 1.5fr) auto;
+  grid-template-areas: "pos foto quem numeros" ". . barra delta";
+  padding: 10px 12px; background: var(--cor-papel-alto);
+  border: 1px solid var(--cor-borda); border-radius: 12px; }
+.ranking__pos { grid-area: pos; font-size: .8rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--cor-tinta-fraca); text-align: center; }
+.ranking__foto { grid-area: foto; width: 46px; height: 46px; object-fit: cover;
+  border-radius: 9px; display: block; }
+.ranking__foto--vazia { background: var(--cor-papel); border: 1px dashed var(--cor-borda); }
+.ranking__quem { grid-area: quem; display: grid; gap: 1px; min-width: 0; }
+.ranking__nome { display: flex; align-items: center; gap: 7px; min-width: 0;
+  font-size: .88rem; font-weight: 650; }
+.ranking__cat { font-size: .72rem; color: var(--cor-tinta-fraca); }
+.selo-video { flex: 0 0 auto; padding: 1px 6px; border-radius: 999px;
+  background: var(--cor-marca-fraca); color: var(--cor-marca);
+  font-size: .6rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.ranking__numeros { grid-area: numeros; display: flex; gap: 16px; }
+.ranking__num { display: grid; text-align: right; }
+.ranking__num b { font-size: .95rem; font-weight: 720; font-variant-numeric: tabular-nums; }
+.ranking__num i { font-size: .66rem; font-style: normal; color: var(--cor-tinta-fraca); }
+.ranking__barra { grid-area: barra; height: 4px; border-radius: 999px;
+  background: var(--cor-borda); overflow: hidden; }
+.ranking__barra > span { display: block; height: 100%; background: var(--grafico-sobe);
+  border-radius: 999px; }
+.ranking__delta { grid-area: delta; text-align: right; }
+
+/* ------------------------------------------------------------ harmonizações  */
+.pares { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.pares__linha { display: grid; align-items: center; gap: 4px 12px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "quem taxa delta" "barra nums nums";
+  padding: 10px 13px; background: var(--cor-papel-alto);
+  border: 1px solid var(--cor-borda); border-radius: 12px; }
+/* "Rende pouco" é relativo à própria casa: cada cardápio tem o seu patamar. */
+.pares__linha--fraca { border-color: var(--cor-borda-forte); background: var(--cor-papel); }
+.pares__quem { grid-area: quem; display: flex; flex-wrap: wrap; align-items: center; gap: 7px;
+  min-width: 0; font-size: .86rem; }
+.pares__mais { color: var(--cor-tinta-fraca); font-weight: 700; }
+.pares__selo { padding: 1px 7px; border-radius: 999px; border: 1px solid var(--cor-borda-forte);
+  font-size: .62rem; font-weight: 700; color: var(--cor-tinta-fraca); text-transform: uppercase;
+  letter-spacing: .06em; }
+.pares__nums { grid-area: nums; font-size: .72rem; font-variant-numeric: tabular-nums;
+  color: var(--cor-tinta-fraca); text-align: right; }
+.pares__barra { grid-area: barra; height: 4px; border-radius: 999px; background: var(--cor-borda);
+  overflow: hidden; align-self: center; }
+.pares__barra > span { display: block; height: 100%; background: var(--grafico-sobe); opacity: .55; }
+.pares__taxa { grid-area: taxa; font-size: 1rem; font-weight: 740; font-variant-numeric: tabular-nums; }
+.pares__delta { grid-area: delta; text-align: right; min-width: 64px; }
+
+/* ----------------------------------------------------------- oportunidades   */
+.oportunidades { display: grid; grid-template-columns: repeat(auto-fit, minmax(265px, 1fr));
+  gap: 12px; margin: 0; padding: 0; list-style: none; }
+.oport { display: grid; align-content: start; gap: 7px; padding: 16px 17px;
+  background: var(--cor-papel-alto); border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-m); }
+.oport__tipo { font-size: .63rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--cor-marca); }
+.oport__titulo { font-size: .95rem; font-weight: 720; line-height: 1.3; }
+.oport__dados { margin: 0; padding: 9px 11px; border-radius: 9px; background: var(--cor-papel);
+  font-size: .78rem; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.oport__porque { margin: 0; font-size: .79rem; line-height: 1.5; color: var(--cor-tinta-media); }
+.oport__acao { margin: 0; font-size: .81rem; line-height: 1.5; font-weight: 600; }
+.oport .bt { justify-self: start; margin-top: 2px; text-decoration: none; }
+
+@media (max-width: 720px) {
+  .ranking__linha { grid-template-columns: 22px 42px minmax(0, 1fr);
+    grid-template-areas: "pos foto quem" "numeros numeros numeros" "barra barra delta"; }
+  .ranking__numeros { justify-content: space-between; gap: 8px; }
+  .ranking__num { text-align: left; }
+  .evolucao__svg { height: 64px; }
 }
 
 /* ------------------------------------------------------------------ tabela */

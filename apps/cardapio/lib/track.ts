@@ -5,12 +5,17 @@ import { getAnonSession } from "./session";
 export type EventoTipo =
   | "abriu_cardapio" | "abriu_categoria" | "viu_prato" | "terminou_video"
   | "adicionou_pedido" | "fechou_pedido" | "compartilhou"
-  | "viu_sugestao" | "aceitou_sugestao";
+  /** Sugestão do fechamento do pedido. */
+  | "viu_sugestao" | "aceitou_sugestao"
+  /** Harmonização dentro do prato: dishId = prato aberto, alvoId = o par. */
+  | "viu_harmonizacao" | "clicou_harmonizacao";
 
 export interface TrackedEvent {
   restaurantId: string;
   tipo: EventoTipo;
   dishId?: string;
+  /** O outro lado do par, nos eventos de harmonização. */
+  alvoId?: string;
   ms?: number;
 }
 

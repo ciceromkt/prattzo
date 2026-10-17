@@ -6,7 +6,13 @@ import { log } from "@/lib/log";
 const TIPOS = new Set([
   "abriu_cardapio", "abriu_categoria", "viu_prato", "terminou_video",
   "adicionou_pedido", "fechou_pedido", "compartilhou", "viu_sugestao", "aceitou_sugestao",
+  "viu_harmonizacao", "clicou_harmonizacao",
 ]);
+
+/** Formato de uuid: o id vem do cliente e vira argumento no banco. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const uuidOuNulo = (v: unknown): string | null =>
+  typeof v === "string" && UUID.test(v) ? v : null;
 
 export async function POST(req: Request) {
   try {
@@ -22,13 +28,14 @@ export async function POST(req: Request) {
 
     const limpos = events
       .slice(0, 50)
-      .map((e) => e as { tipo?: string; dishId?: string; ms?: number })
+      .map((e) => e as { tipo?: string; dishId?: string; alvoId?: string; ms?: number })
       .filter((e) => e.tipo && TIPOS.has(e.tipo))
       .map((e) => ({
         restaurantId,
         sessao,
         tipo: e.tipo as never,
-        dishId: e.dishId ?? null,
+        dishId: uuidOuNulo(e.dishId),
+        alvoId: uuidOuNulo(e.alvoId),
         ms: typeof e.ms === "number" && e.ms >= 0 && e.ms < 600_000 ? Math.round(e.ms) : null,
       }));
 

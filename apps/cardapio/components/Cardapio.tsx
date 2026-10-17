@@ -272,10 +272,10 @@ export function Cardapio({ menu }: { menu: PublicMenu }) {
             max: menu.restaurant.harmonizacao_max,
           }}
           onAbrirPar={abrirHarmonizado}
-          onQueroPar={(p) => {
-            somar(p, 1);
-            track({ restaurantId: menu.restaurant.id, tipo: "aceitou_sugestao", dishId: p.id });
-          }}
+          /* O evento do par sai de dentro do Stories, que sabe de qual prato
+             a oferta partiu. Aqui gravava `aceitou_sugestao`, que é a sugestão
+             do fechamento do pedido — outra coisa. */
+          onQueroPar={(p) => somar(p, 1)}
         />
       )}
 

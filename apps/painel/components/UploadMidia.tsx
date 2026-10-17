@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import type { MediaItem } from "@prattzo/core";
 import {
-  MAX_FOTO_ESCOLHIDA_BYTES, MAX_VIDEO_BYTES, VIDEO_SEGUNDOS_EXIBIDOS, validatePhoto, validateVideo,
+  MAX_FOTO_ESCOLHIDA_BYTES, MAX_VIDEO_BYTES, posterUtil, VIDEO_SEGUNDOS_EXIBIDOS, validatePhoto, validateVideo,
 } from "@prattzo/core";
 import { excluirMidia, moverMidia, registrarMidia, substituirMidia } from "@/lib/actions";
 import { RecorteFoto } from "./RecorteFoto";
@@ -210,7 +210,11 @@ export function UploadMidia({
         <div className="midia-lista">
           {midias.map((m, i) => (
             <div className="midia-item" key={m.id}>
-              <img src={m.tipo === "video" ? m.poster_url ?? m.url : m.url} alt="" />
+              {/* src="" recarregaria a própria página; vídeo sem quadro de capa
+                  aproveitável ganha um retângulo em vez de uma imagem partida. */}
+              {(m.tipo === "video" ? posterUtil(m) : m.url)
+                ? <img src={(m.tipo === "video" ? posterUtil(m) : m.url)!} alt="" />
+                : <span className="midia-item__semcapa" aria-hidden="true" />}
               {m.tipo === "video" ? <span className="midia-item__selo">vídeo</span> : null}
               {/* Ordem: ← → primeiro, ⤢ e ✕ depois. Em 74px de miniatura cabem
                   dois botões por linha, e as setas são um par — separá-las em

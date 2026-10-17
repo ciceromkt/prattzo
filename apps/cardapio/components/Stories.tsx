@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Dish, MenuGroup, ModoHarmonizacao, ParCategoria, ParPrato } from "@prattzo/core";
 import {
-  capaDoPrato, estaEsgotado, harmonizacoes, midiasDoPrato, priceLabel, VIDEO_SEGUNDOS_EXIBIDOS,
+  capaDoPrato, estaEsgotado, harmonizacoes, midiasDoPrato, posterUtil, priceLabel, VIDEO_SEGUNDOS_EXIBIDOS,
 } from "@prattzo/core";
 import { DUR_SEM_VIDEO } from "@prattzo/ui";
 import { Regua } from "./Regua";
@@ -112,14 +112,36 @@ export function Stories({
   }, [prato, restaurantId]);
 
   /**
-   * A harmonização é oferta, e oferta se mede: o mesmo par de eventos da
-   * sugestão de fechamento serve aqui, e o painel já sabe contá-los.
+   * A harmonização é oferta, e oferta se mede — de quem para quem.
+   *
+   * Um evento por par exibido, com os dois lados: `dish_id` é o prato aberto,
+   * `alvo_id` é o que foi oferecido. É o que permite ao painel dizer "Picanha
+   * + Drink: 185 exibições, 42 interações" em vez de contar exibições soltas.
+   *
+   * Antes isto gravava `viu_sugestao`, o mesmo tipo da sugestão do fechamento
+   * do pedido — outra tela, outro momento. Somados, não diziam nada sobre
+   * nenhum dos dois.
    */
+  const paresExibidos = pares.map((h) => h.prato.id).join(",");
   useEffect(() => {
-    if (!prato || pares.length === 0) return;
-    track({ restaurantId, tipo: "viu_sugestao", dishId: prato.id });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prato?.id, pares.length > 0]);
+    // A chave na dependência é a lista de ids: enquanto o prato e os pares
+    // forem os mesmos, não grava de novo a cada renderização.
+    if (!prato || !paresExibidos) return;
+    for (const alvoId of paresExibidos.split(",")) {
+      track({ restaurantId, tipo: "viu_harmonizacao", dishId: prato.id, alvoId });
+    }
+  }, [prato, paresExibidos, restaurantId]);
+
+  /** Os dois jeitos de aceitar a oferta: abrir o par, ou somá-lo ao pedido. */
+  const cliqueNoPar = useCallback(
+    (alvo: Dish, seguir: (p: Dish) => void) => {
+      if (prato) {
+        track({ restaurantId, tipo: "clicou_harmonizacao", dishId: prato.id, alvoId: alvo.id });
+      }
+      seguir(alvo);
+    },
+    [prato, restaurantId],
+  );
 
   // Foto avança sozinha; vídeo, quem manda é o fim dele. Lendo os detalhes,
   // nada avança: o cliente está no meio de uma frase. Vídeo que não vai rodar
@@ -200,7 +222,8 @@ export function Stories({
               key={atual.id}
               className={`stories__video${travado ? " stories__video--parado" : ""}`}
               src={atual.url}
-              poster={atual.poster_url ?? undefined}
+              /* posterUtil: vários envios gravaram o próprio .mp4 em poster_url. */
+              poster={posterUtil(atual) ?? undefined}
               playsInline
               autoPlay
               preload="auto"
@@ -215,8 +238,8 @@ export function Stories({
             />
             {/* Depois do vídeo no documento, para pintar por cima dele: o botão
                 de play que o iOS desenha não sai por CSS, mas fica atrás. */}
-            {travado && atual.poster_url ? (
-              <img className="stories__foto" src={atual.poster_url} alt={prato.nome} />
+            {travado && posterUtil(atual) ? (
+              <img className="stories__foto" src={posterUtil(atual)!} alt={prato.nome} />
             ) : null}
           </>
         ) : atual ? (
@@ -347,7 +370,12 @@ export function Stories({
           {!atual ? <span className="sem-video-aviso">Ainda sem foto nem vídeo</span> : null}
 
           {pares.length > 0 ? (
-            <Harmoniza pares={pares} pedido={pedido} onAbrir={onAbrirPar} onQuero={onQueroPar} />
+            <Harmoniza
+              pares={pares}
+              pedido={pedido}
+              onAbrir={(p) => cliqueNoPar(p, onAbrirPar)}
+              onQuero={(p) => cliqueNoPar(p, onQueroPar)}
+            />
           ) : null}
 
           <div className="barra-acoes">

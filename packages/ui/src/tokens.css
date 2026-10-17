@@ -24,6 +24,15 @@
   --cor-erro: #b3261e;
   --cor-erro-fraca: #fdeceb;
 
+  /* Gráficos. Um par só, que serve aos dois temas.
+     Não é o verde/vermelho de subiu/caiu: nesse par, quem tem deuteranopia vê
+     praticamente a mesma cor (ΔE 3,4 — abaixo de 8 reprova). Laranja e azul
+     dão ΔE 25 para protanopia e 30 para visão normal, nos dois temas. Mesmo
+     assim a cor nunca carrega sozinha o sinal: o número vem com + ou − e a
+     barra sai para um lado ou para o outro. */
+  --grafico-sobe: #e85f33;
+  --grafico-desce: #5590e4;
+
   --raio-p: 8px;
   --raio-m: 14px;
   --raio-g: 22px;

@@ -16,6 +16,7 @@ export interface RestaurantRow {
   link_google: string | null;
   harmonizacao_modo: string | null;
   harmonizacao_max: number | null;
+  demo_resultados: boolean | null;
   publicado: boolean;
   criado_em: string;
   atualizado_em: string;
@@ -87,8 +88,12 @@ export type EventType =
   | "adicionou_pedido"
   | "fechou_pedido"
   | "compartilhou"
+  /** Sugestão do FECHAMENTO do pedido. */
   | "viu_sugestao"
-  | "aceitou_sugestao";
+  | "aceitou_sugestao"
+  /** Harmonização DENTRO do prato: dish_id = prato aberto, alvo_id = o par. */
+  | "viu_harmonizacao"
+  | "clicou_harmonizacao";
 
 export interface AtencaoRow {
   dish_id: string;

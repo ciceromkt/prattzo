@@ -6,3 +6,6 @@ export * from "./format";
 export * from "./media";
 export * from "./horarios";
 export * from "./harmonizacao";
+export * from "./resultados";
+export * from "./demo";
+export * from "./oportunidades";

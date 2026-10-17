@@ -60,10 +60,26 @@ export function ordenar<T extends { ordem: number; nome: string }>(itens: readon
   return [...itens].sort((a, b) => (a.ordem - b.ordem) || a.nome.localeCompare(b.nome, "pt-BR"));
 }
 
+/**
+ * Um poster que na verdade é o próprio vídeo não é poster.
+ *
+ * Vários envios gravaram `poster_url` apontando para o .mp4 — o quadro de capa
+ * não chegou a ser extraído, e o caminho do vídeo entrou no lugar. Onde isso
+ * vira `<img src="...mp4">`, a imagem quebra; no `poster` de um `<video>`, não
+ * aparece nada. Melhor cair para a foto do prato, que existe na maioria dos
+ * casos, do que mostrar um ícone de imagem partida.
+ */
+const EXT_VIDEO = /\.(mp4|mov|webm|m4v)(\?|#|$)/i;
+export function posterUtil(m: Pick<MediaItem, "poster_url" | "url">): string | null {
+  const p = m.poster_url;
+  if (!p || EXT_VIDEO.test(p)) return null;
+  return p;
+}
+
 export function capaDoPrato(d: Pick<Dish, "midias">): string | null {
   const m = ordenar(d.midias.map((x, i) => ({ ...x, ordem: x.ordem, nome: String(i) })));
-  const video = m.find((x) => x.tipo === "video" && x.poster_url);
-  if (video?.poster_url) return video.poster_url;
+  const video = m.find((x) => x.tipo === "video" && posterUtil(x));
+  if (video) return posterUtil(video);
   const foto = m.find((x) => x.tipo === "foto");
   return foto?.url ?? null;
 }
